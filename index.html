@@ -9,14 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <!-- Firebase & Google SDK (loaded early) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -170,6 +168,7 @@
         .btn-chess:hover { background: rgba(0,180,216,0.4); border-color: var(--primary); }
         .btn-chess.primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; }
         .move-history { max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; margin-top: 10px; }
+        .stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; }
         
         /* SETTINGS */
         .toggle-group { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-top: 10px; }
@@ -344,7 +343,7 @@
             </div>
         </div>
         
-        <!-- CHESS (MOVED TO SECONDARY) -->
+        <!-- CHESS -->
         <div id="section-chess" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-chess-king"></i><h3>♟️ Chess Arena</h3></div>
@@ -418,10 +417,17 @@
         </div>
     </div>
 
+    <!-- ========== SCRIPTS (loaded at the bottom) ========== -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FIXED: chess.js working version -->
+    <script src="https://unpkg.com/chess.js@0.13.4/dist/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js"></script>
+
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — RESTORED HOME-SCHOOLING FOCUS
-        // BACKEND: https://tshaka-m-academy-backend.onrender.com
+        // TSHAKA M ACADEMY — FIXED CHESS.JS & GOOGLE SIGN-IN
         // ============================================================
         
         const BACKEND_URL = 'https://tshaka-m-academy-backend.onrender.com';
@@ -447,7 +453,10 @@
         function manualGoogleSignIn() {
             auth.signInWithPopup(provider)
                 .then(function(result) { loginUser(result.user); })
-                .catch(function(error) { alert('Sign-in error: ' + error.message); });
+                .catch(function(error) { 
+                    console.error('Sign-in error:', error);
+                    alert('Sign-in error: ' + error.message);
+                });
         }
         
         function loginUser(user) {
@@ -484,7 +493,7 @@
             } catch(e) {}
         }
         
-        // ========== CHESS ==========
+        // ========== CHESS (fixed with working chess.js) ==========
         let chess = new Chess();
         let boardElement = document.getElementById('chessBoard');
         let isAIThinking = false;
