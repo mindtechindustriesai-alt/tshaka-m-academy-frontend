@@ -405,7 +405,7 @@
 
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — FIXED GOOGLE SIGN-IN
+        // TSHAKA M ACADEMY — GOOGLE SIGN-IN (CLIENT ID INSERTED)
         // ============================================================
         
         // ========== FIREBASE ==========
@@ -425,11 +425,10 @@
         let currentUser = null;
         let isDemo = false;
         
-        // ========== GOOGLE SIGN-IN — FIXED ==========
+        // ========== GOOGLE SIGN-IN — CLIENT ID INSERTED ==========
         function initGoogleSignIn() {
             console.log('initGoogleSignIn called');
             
-            // Check if Google SDK is loaded
             if (typeof google === 'undefined' || !google.accounts) {
                 console.log('Google SDK not loaded yet, retrying...');
                 setTimeout(initGoogleSignIn, 300);
@@ -438,8 +437,8 @@
             
             console.log('Google SDK loaded, initializing...');
             
-            // REPLACE THIS WITH YOUR ACTUAL CLIENT ID
-            const CLIENT_ID = 'YOUR_ACTUAL_CLIENT_ID.apps.googleusercontent.com';
+            // YOUR ACTUAL CLIENT ID
+            const CLIENT_ID = '1051964204069-9q54h4khuot5cg7li8gqt0meq3eutli5.apps.googleusercontent.com';
             
             try {
                 google.accounts.id.initialize({
@@ -476,7 +475,6 @@
                     }
                 );
                 
-                // Show the login overlay
                 document.getElementById('loginOverlay').style.display = 'flex';
                 document.getElementById('appContainer').style.display = 'none';
                 
@@ -484,7 +482,6 @@
                 
             } catch (error) {
                 console.error('Google Sign-In error:', error);
-                // Fallback: manual button
                 const container = document.getElementById('googleSignInContainer');
                 if (container) {
                     container.innerHTML = `
@@ -1051,11 +1048,9 @@
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
             document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
             
-            // Force login overlay to show
             document.getElementById('loginOverlay').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
             
-            // Initialize Google Sign-In after DOM is ready
             setTimeout(initGoogleSignIn, 500);
         });
     </script>
