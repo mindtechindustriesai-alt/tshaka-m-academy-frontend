@@ -438,9 +438,12 @@
             
             console.log('Google SDK loaded, initializing...');
             
+            // REPLACE THIS WITH YOUR ACTUAL CLIENT ID
+            const CLIENT_ID = 'YOUR_ACTUAL_CLIENT_ID.apps.googleusercontent.com';
+            
             try {
                 google.accounts.id.initialize({
-                    client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // REPLACE THIS
+                    client_id: CLIENT_ID,
                     callback: function(response) {
                         console.log('Google credential received:', response);
                         const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
@@ -472,6 +475,10 @@
                         width: 300
                     }
                 );
+                
+                // Show the login overlay
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('appContainer').style.display = 'none';
                 
                 console.log('Google Sign-In button rendered.');
                 
@@ -1043,6 +1050,11 @@
             renderChessBoard();
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
             document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
+            
+            // Force login overlay to show
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+            
             // Initialize Google Sign-In after DOM is ready
             setTimeout(initGoogleSignIn, 500);
         });
