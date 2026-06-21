@@ -45,7 +45,7 @@
         #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
         
-        /* ===== GLASSMORPHISM (KHENSANI STYLE) ===== */
+        /* ===== GLASSMORPHISM ===== */
         .glass-card, .stat-card, .login-card, .chess-board-container {
             background: rgba(15, 25, 45, 0.45);
             backdrop-filter: blur(16px);
@@ -81,11 +81,12 @@
         }
         .login-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
         .login-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 25px; font-family: var(--font-mono); letter-spacing: 2px; }
-        .demo-btn { background: linear-gradient(135deg, var(--quantum), var(--primary)); border: none; padding: 14px; border-radius: 60px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; transition: all 0.2s; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .demo-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--quantum-glow); }
-        .g_id_signin { display: flex; justify-content: center; margin: 15px 0; }
+        
+        #googleSignInContainer { display: flex; justify-content: center; margin: 15px 0; min-height: 50px; }
         .auth-separator { display: flex; align-items: center; gap: 15px; margin: 16px 0; color: var(--text-secondary); font-size: 0.65rem; }
         .auth-separator::before, .auth-separator::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
+        .demo-btn { background: linear-gradient(135deg, var(--quantum), var(--primary)); border: none; padding: 14px; border-radius: 60px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; transition: all 0.2s; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .demo-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--quantum-glow); }
         
         /* ===== HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
@@ -120,7 +121,6 @@
         .card-header h3 { font-size: 1.1rem; font-weight: 600; }
         
         /* ===== CHESS ===== */
-        .chess-board-container { padding: 20px; margin-bottom: 20px; }
         .chess-board-wrapper { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         #chessBoard { width: 100%; max-width: 450px; aspect-ratio: 1/1; }
         .chess-sidebar { flex: 1; min-width: 200px; }
@@ -129,13 +129,11 @@
         .btn-chess { background: rgba(0,180,216,0.2); border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 30px; color: white; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
         .btn-chess:hover { background: rgba(0,180,216,0.4); border-color: var(--primary); }
         .btn-chess.primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; }
-        .btn-chess.primary:hover { filter: brightness(1.05); }
         .move-history { max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; margin-top: 10px; }
         
         /* ===== QUIZ ===== */
         .quiz-option { display: block; width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; color: white; cursor: pointer; margin-bottom: 8px; text-align: left; transition: 0.2s; }
         .quiz-option:hover { background: rgba(0,180,216,0.2); border-color: var(--primary); }
-        .quiz-option.selected { background: var(--primary); border-color: var(--primary); }
         .quiz-option.correct { background: var(--success); color: #000; }
         .quiz-option.wrong { background: var(--danger); }
         
@@ -157,7 +155,7 @@
         /* ===== WHATSAPP ===== */
         .whatsapp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .whatsapp-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 16px; text-align: center; border: 1px solid var(--glass-border); transition: 0.2s; }
-        .whatsapp-card:hover { border-color: #25D366; transform: translateY(-2px); }
+        .whatsapp-card:hover { border-color: #25D366; }
         .btn-whatsapp { background: #25D366; border: none; padding: 10px 20px; border-radius: 30px; color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 8px; }
         .btn-whatsapp:hover { transform: scale(1.02); filter: brightness(1.05); }
         
@@ -176,7 +174,6 @@
         .footer-logo { height: 30px; opacity: 0.6; transition: 0.3s; }
         .footer-logo:hover { opacity: 1; }
         
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .header { flex-direction: column; text-align: center; }
@@ -408,11 +405,8 @@
 
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — FULL HTML
-        // CHESS ENGINE: Stockfish.js (reliable)
+        // TSHAKA M ACADEMY — FIXED GOOGLE SIGN-IN
         // ============================================================
-        
-        const BACKEND_URL = "https://tshaka-m-academy-backend.onrender.com";
         
         // ========== FIREBASE ==========
         const firebaseConfig = {
@@ -431,7 +425,126 @@
         let currentUser = null;
         let isDemo = false;
         
-        // ========== CHESS ENGINE (Stockfish.js) ==========
+        // ========== GOOGLE SIGN-IN — FIXED ==========
+        function initGoogleSignIn() {
+            console.log('initGoogleSignIn called');
+            
+            // Check if Google SDK is loaded
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.log('Google SDK not loaded yet, retrying...');
+                setTimeout(initGoogleSignIn, 300);
+                return;
+            }
+            
+            console.log('Google SDK loaded, initializing...');
+            
+            try {
+                google.accounts.id.initialize({
+                    client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // REPLACE THIS
+                    callback: function(response) {
+                        console.log('Google credential received:', response);
+                        const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                        auth.signInWithCredential(credential)
+                            .then(function(result) {
+                                loginUser(result.user);
+                            })
+                            .catch(function(error) {
+                                console.error('Firebase sign-in error:', error);
+                                alert('Sign-in error: ' + error.message);
+                            });
+                    },
+                    cancel_on_tap_outside: false
+                });
+                
+                const container = document.getElementById('googleSignInContainer');
+                if (!container) {
+                    console.error('googleSignInContainer not found!');
+                    return;
+                }
+                
+                google.accounts.id.renderButton(
+                    container,
+                    {
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'signin_with',
+                        shape: 'pill',
+                        width: 300
+                    }
+                );
+                
+                console.log('Google Sign-In button rendered.');
+                
+            } catch (error) {
+                console.error('Google Sign-In error:', error);
+                // Fallback: manual button
+                const container = document.getElementById('googleSignInContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <button onclick="manualGoogleSignIn()" style="background:white;color:#000;padding:12px 24px;border-radius:60px;border:none;font-weight:600;cursor:pointer;width:100%;font-size:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
+                            <i class="fab fa-google" style="color:#EA4335;"></i> Sign in with Google
+                        </button>
+                    `;
+                }
+            }
+        }
+        
+        // ========== FALLBACK: MANUAL GOOGLE SIGN-IN ==========
+        function manualGoogleSignIn() {
+            auth.signInWithPopup(provider)
+                .then(function(result) {
+                    loginUser(result.user);
+                })
+                .catch(function(error) {
+                    console.error('Popup sign-in error:', error);
+                    alert('Sign-in error: ' + error.message);
+                });
+        }
+        
+        // ========== AUTH FUNCTIONS ==========
+        function loginUser(user) {
+            currentUser = user;
+            isDemo = false;
+            document.getElementById('userEmailDisplay').textContent = user.email;
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            loadProfile(user.uid);
+            console.log('User logged in:', user.email);
+        }
+        
+        function enterDemo() {
+            isDemo = true;
+            document.getElementById('userEmailDisplay').textContent = 'Demo User';
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            console.log('Demo mode entered');
+        }
+        
+        function logout() {
+            if (!isDemo) {
+                auth.signOut();
+            }
+            isDemo = false;
+            currentUser = null;
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+            console.log('Logged out');
+        }
+        
+        async function loadProfile(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('profileName').value = data.name || '';
+                    document.getElementById('profilePhone').value = data.phone || '';
+                }
+            } catch(e) {
+                console.log('Profile load error:', e);
+            }
+        }
+        
+        // ========== CHESS ENGINE ==========
         let chess = new Chess();
         let boardElement = document.getElementById('chessBoard');
         let isAIThinking = false;
@@ -442,11 +555,10 @@
         let stockfish = null;
         let stockfishReady = false;
         
-        // Initialize Stockfish
         function initStockfish() {
             try {
                 stockfish = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
-                stockfish.onmessage = (event) => {
+                stockfish.onmessage = function(event) {
                     const line = event.data;
                     if (line.startsWith('bestmove')) {
                         const parts = line.split(' ');
@@ -455,9 +567,6 @@
                             makeAIMove(move);
                         }
                         isAIThinking = false;
-                    }
-                    if (line.startsWith('info depth')) {
-                        // Optional: log depth
                     }
                 };
                 stockfish.postMessage('uci');
@@ -476,11 +585,10 @@
         
         function requestAIMove(fen) {
             if (!stockfishReady) {
-                // Fallback: random legal move
                 const moves = chess.moves();
                 if (moves.length > 0) {
                     const randomMove = moves[Math.floor(Math.random() * moves.length)];
-                    setTimeout(() => makeAIMove(randomMove), 200);
+                    setTimeout(function() { makeAIMove(randomMove); }, 200);
                 }
                 return;
             }
@@ -497,9 +605,6 @@
                 if (chess.game_over()) {
                     const resultText = chess.in_checkmate() ? 'Checkmate! AI wins.' : 'Draw.';
                     alert(resultText + ' Game over.');
-                    if (!chess.in_checkmate()) {
-                        // If human checkmated, increment games won for AI
-                    }
                 }
             }
             isAIThinking = false;
@@ -552,12 +657,12 @@
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
             document.getElementById('chessGamesWon').textContent = chessGamesWon;
             const history = chess.history({ verbose: true });
-            const moves = history.map(m => m.san).join(' ');
+            const moves = history.map(function(m) { return m.san; }).join(' ');
             document.getElementById('moveHistory').textContent = moves || 'No moves yet';
         }
         
         // Chess click handler
-        boardElement.addEventListener('click', (e) => {
+        boardElement.addEventListener('click', function(e) {
             const square = e.target.closest('.square');
             if (!square) return;
             if (isAIThinking) return;
@@ -565,7 +670,6 @@
             const pos = square.dataset.pos;
             if (!pos) return;
             
-            // Try to find a legal move from this square
             const moves = chess.moves({ square: pos, verbose: true });
             if (moves.length > 0) {
                 const move = moves[0];
@@ -586,42 +690,11 @@
                         return;
                     }
                     
-                    // AI turn
                     if (chess.turn() === 'b') {
                         document.getElementById('turnIndicator').textContent = 'AI thinking...';
                         requestAIMove(chess.fen());
                     }
                 }
-            }
-        });
-        
-        // New game
-        document.getElementById('chessNewBtn').addEventListener('click', () => {
-            chess = new Chess();
-            gameHistory = [];
-            renderChessBoard();
-            document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
-            document.getElementById('moveHistory').textContent = 'No moves yet';
-            document.getElementById('turnIndicator').textContent = 'White to move';
-        });
-        
-        // Undo
-        document.getElementById('chessUndoBtn').addEventListener('click', () => {
-            if (gameHistory.length === 0) return;
-            chess.undo();
-            gameHistory.pop();
-            if (chess.turn() === 'b') {
-                chess.undo();
-                gameHistory.pop();
-            }
-            renderChessBoard();
-        });
-        
-        // Hint
-        document.getElementById('chessHintBtn').addEventListener('click', () => {
-            const moves = chess.moves({ verbose: true });
-            if (moves.length > 0) {
-                alert('Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to);
             }
         });
         
@@ -654,10 +727,10 @@
             ]
         };
         
-        document.getElementById('quizGenerateBtn').addEventListener('click', () => {
+        document.getElementById('quizGenerateBtn').addEventListener('click', function() {
             const subject = document.getElementById('quizSubject').value;
             const bank = questionBank[subject] || questionBank.math;
-            quizQuestions = bank.map(q => ({ ...q }));
+            quizQuestions = bank.map(function(q) { return { ...q }; });
             currentQuestionIndex = 0;
             quizScore = 0;
             quizCorrect = 0;
@@ -667,7 +740,7 @@
             updateQuizStats();
         });
         
-        document.getElementById('quizResetBtn').addEventListener('click', () => {
+        document.getElementById('quizResetBtn').addEventListener('click', function() {
             quizQuestions = [];
             currentQuestionIndex = 0;
             quizScore = 0;
@@ -698,7 +771,7 @@
                     <p style="font-size:1.1rem;margin-top:8px;font-weight:500;">${q.q}</p>
                 </div>
             `;
-            q.options.forEach((option, idx) => {
+            q.options.forEach(function(option, idx) {
                 html += `<button class="quiz-option" data-index="${idx}" onclick="selectQuizOption(this, ${idx})">${String.fromCharCode(65+idx)}. ${option}</button>`;
             });
             html += `<div style="margin-top:12px;font-size:0.7rem;color:var(--text-secondary);">⚛️ Quantum Powered</div>`;
@@ -709,7 +782,7 @@
             const q = quizQuestions[currentQuestionIndex];
             const correct = q.answer;
             const allOptions = document.querySelectorAll('.quiz-option');
-            allOptions.forEach(btn => btn.disabled = true);
+            allOptions.forEach(function(btn) { btn.disabled = true; });
             
             if (idx === correct) {
                 el.classList.add('correct');
@@ -723,7 +796,7 @@
             }
             updateQuizStats();
             
-            setTimeout(() => {
+            setTimeout(function() {
                 currentQuestionIndex++;
                 renderQuizQuestion();
             }, 1500);
@@ -740,12 +813,12 @@
         let chatSpeed = 35;
         let reasoningMode = false;
         
-        document.getElementById('chatSpeedSlider').addEventListener('input', () => {
+        document.getElementById('chatSpeedSlider').addEventListener('input', function() {
             chatSpeed = parseInt(document.getElementById('chatSpeedSlider').value);
             document.getElementById('chatSpeedDisplay').textContent = chatSpeed + ' cps';
         });
         
-        document.getElementById('reasoningToggleBtn').addEventListener('click', () => {
+        document.getElementById('reasoningToggleBtn').addEventListener('click', function() {
             reasoningMode = !reasoningMode;
             document.getElementById('reasoningToggleBtn').textContent = reasoningMode ? 'ON' : 'OFF';
             document.getElementById('reasoningToggleBtn').style.background = reasoningMode ? 'rgba(0,255,136,0.2)' : '';
@@ -760,7 +833,7 @@
             const container = document.getElementById('chatMessages');
             const userDiv = document.createElement('div');
             userDiv.className = 'chat-message user';
-            userDiv.innerHTML = `<strong>You:</strong><br>${message}`;
+            userDiv.innerHTML = '<strong>You:</strong><br>' + message;
             container.appendChild(userDiv);
             container.scrollTop = container.scrollHeight;
             
@@ -771,7 +844,7 @@
             container.scrollTop = container.scrollHeight;
             
             try {
-                const response = await fetch(`${BACKEND_URL}/api/chat/stream`, {
+                const response = await fetch(BACKEND_URL + '/api/chat/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -786,7 +859,7 @@
                 typingDiv.remove();
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-message ai';
-                aiDiv.innerHTML = `<strong>Khensani:</strong><br><span id="streamingText"></span>`;
+                aiDiv.innerHTML = '<strong>Khensani:</strong><br><span id="streamingText"></span>';
                 container.appendChild(aiDiv);
                 const textSpan = aiDiv.querySelector('#streamingText');
                 const reader = response.body.getReader();
@@ -803,14 +876,16 @@
                 typingDiv.remove();
                 const errDiv = document.createElement('div');
                 errDiv.className = 'chat-message ai';
-                errDiv.innerHTML = `<strong>Khensani:</strong> Sorry, I'm having trouble. Try again.`;
+                errDiv.innerHTML = '<strong>Khensani:</strong> Sorry, I\'m having trouble. Try again.';
                 container.appendChild(errDiv);
             }
             container.scrollTop = container.scrollHeight;
         }
         
         document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
-        document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        });
         
         // ========== MAP ==========
         let map;
@@ -826,7 +901,7 @@
             });
             L.marker([-26.1375, 28.4140], { icon: childIcon }).addTo(map).bindPopup('📍 Child Location');
         }
-        document.getElementById('mapRefreshBtn').addEventListener('click', () => {
+        document.getElementById('mapRefreshBtn').addEventListener('click', function() {
             if (map) { map.setView([-26.1375 + (Math.random()-0.5)*0.01, 28.4140 + (Math.random()-0.5)*0.01], 14); }
         });
         
@@ -834,8 +909,8 @@
         function openWhatsApp(type) {
             const phone = document.getElementById('profilePhone').value || '27733997997';
             const clean = phone.replace(/\D/g, '');
-            const msg = encodeURIComponent(`Hello from Tshaka M Academy! I'm using the ${type.replace('_', ' ')} group.`);
-            window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
+            const msg = encodeURIComponent('Hello from Tshaka M Academy! I\'m using the ' + type.replace('_', ' ') + ' group.');
+            window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
         }
         window.openWhatsApp = openWhatsApp;
         
@@ -860,12 +935,11 @@
         }
         window.toggleFall = toggleFall;
         
-        // Simulate fall detection
         if (window.DeviceMotionEvent) {
-            window.addEventListener('devicemotion', (e) => {
+            window.addEventListener('devicemotion', function(e) {
                 if (!fallActive) return;
                 const acc = e.accelerationIncludingGravity;
-                const mag = Math.sqrt((acc.x||0)**2 + (acc.y||0)**2 + (acc.z||0)**2);
+                const mag = Math.sqrt((acc.x||0)*(acc.x||0) + (acc.y||0)*(acc.y||0) + (acc.z||0)*(acc.z||0));
                 if (mag > 25) {
                     document.getElementById('fallAlert').style.display = 'block';
                     document.getElementById('fallAlert').innerHTML = `
@@ -875,89 +949,75 @@
                     const phone = document.getElementById('profilePhone').value || '27733997997';
                     const clean = phone.replace(/\D/g, '');
                     if (clean.length > 5) {
-                        window.open(`https://wa.me/${clean}?text=${encodeURIComponent('🚨 Emergency: Fall detected by Tshaka M Academy app. Please check on the student immediately.')}`, '_blank');
+                        window.open('https://wa.me/' + clean + '?text=' + encodeURIComponent('🚨 Emergency: Fall detected by Tshaka M Academy app. Please check on the student immediately.'), '_blank');
                     }
-                    setTimeout(() => { document.getElementById('fallAlert').style.display = 'none'; }, 10000);
+                    setTimeout(function() { document.getElementById('fallAlert').style.display = 'none'; }, 10000);
                 }
             }, { passive: true });
         }
         
         // ========== PROFILE ==========
-        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+        document.getElementById('saveProfileBtn').addEventListener('click', async function() {
             const uid = isDemo ? 'demo' : (currentUser ? currentUser.uid : 'demo');
             const name = document.getElementById('profileName').value;
             const phone = document.getElementById('profilePhone').value;
             try {
-                await db.collection('users').doc(uid).set({ name, phone, updatedAt: new Date() }, { merge: true });
+                await db.collection('users').doc(uid).set({ name: name, phone: phone, updatedAt: new Date() }, { merge: true });
                 alert('✅ Settings saved!');
-            } catch(e) { alert('Error saving: ' + e.message); }
+            } catch(e) {
+                alert('Error saving: ' + e.message);
+            }
         });
         
-        // ========== AUTH ==========
-        function loginUser(user) {
-            currentUser = user;
-            isDemo = false;
-            document.getElementById('userEmailDisplay').textContent = user.email;
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            loadProfile(user.uid);
-        }
-        
-        function enterDemo() {
-            isDemo = true;
-            document.getElementById('userEmailDisplay').textContent = 'Demo User';
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-        }
-        
-        function logout() {
-            if (!isDemo) auth.signOut();
-            isDemo = false;
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
-        }
-        
-        async function loadProfile(uid) {
-            try {
-                const doc = await db.collection('users').doc(uid).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('profileName').value = data.name || '';
-                    document.getElementById('profilePhone').value = data.phone || '';
-                }
-            } catch(e) { console.log('Profile load error'); }
-        }
-        
+        // ========== EVENT LISTENERS ==========
         document.getElementById('demoLoginBtn').addEventListener('click', enterDemo);
         document.getElementById('logoutMainBtn').addEventListener('click', logout);
         
-        function initGoogleSignIn() {
-            if (typeof google === 'undefined') { setTimeout(initGoogleSignIn, 500); return; }
-            google.accounts.id.initialize({
-                client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-                callback: (response) => {
-                    const cred = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                    auth.signInWithCredential(cred).then((result) => loginUser(result.user)).catch(console.error);
-                }
-            });
-            google.accounts.id.renderButton(
-                document.getElementById('googleSignInContainer'),
-                { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill' }
-            );
-        }
+        // ========== CHESS CONTROLS ==========
+        document.getElementById('chessNewBtn').addEventListener('click', function() {
+            chess = new Chess();
+            gameHistory = [];
+            renderChessBoard();
+            document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
+            document.getElementById('moveHistory').textContent = 'No moves yet';
+            document.getElementById('turnIndicator').textContent = 'White to move';
+        });
         
-        auth.onAuthStateChanged((user) => { if (user && !isDemo) loginUser(user); });
+        document.getElementById('chessUndoBtn').addEventListener('click', function() {
+            if (gameHistory.length === 0) return;
+            chess.undo();
+            gameHistory.pop();
+            if (chess.turn() === 'b') {
+                chess.undo();
+                gameHistory.pop();
+            }
+            renderChessBoard();
+        });
+        
+        document.getElementById('chessHintBtn').addEventListener('click', function() {
+            const moves = chess.moves({ verbose: true });
+            if (moves.length > 0) {
+                alert('Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to);
+            }
+        });
         
         // ========== NAVIGATION ==========
-        document.querySelectorAll('.menu-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.menu-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
                 btn.classList.add('active');
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById(`section-${btn.dataset.section}`).classList.add('active');
+                document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+                document.getElementById('section-' + btn.dataset.section).classList.add('active');
                 if (btn.dataset.section === 'map' && !map) { setTimeout(initMap, 300); }
                 if (btn.dataset.section === 'chess') { renderChessBoard(); }
             });
+        });
+        
+        // ========== AUTH STATE LISTENER ==========
+        auth.onAuthStateChanged(function(user) {
+            if (user && !isDemo) {
+                loginUser(user);
+            }
         });
         
         // ========== PARTICLES ==========
@@ -975,16 +1035,17 @@
         });
         
         // ========== INIT ==========
-        initGoogleSignIn();
-        initStockfish();
-        renderChessBoard();
-        document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
-        document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
-        console.log('🚀 Tshaka M Academy · Full HTML Loaded');
-        console.log('   ♟️ Chess AI: Stockfish.js');
-        console.log('   📝 Quiz: Khensani AI');
-        console.log('   📍 Map: Leaflet');
-        console.log('   💬 WhatsApp: Integrated');
+        const BACKEND_URL = 'https://tshaka-m-academy-backend.onrender.com';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Tshaka M Academy loading...');
+            initStockfish();
+            renderChessBoard();
+            document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
+            document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
+            // Initialize Google Sign-In after DOM is ready
+            setTimeout(initGoogleSignIn, 500);
+        });
     </script>
 </body>
 </html>
