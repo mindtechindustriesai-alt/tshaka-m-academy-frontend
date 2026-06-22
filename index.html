@@ -10,16 +10,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- ===== LOAD LIBRARIES IN CORRECT ORDER ===== -->
+    <!-- ===== LIBRARIES ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
     <style>
-        /* ===== RESET & VARIABLES ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
@@ -45,14 +45,7 @@
         #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
         
-        .glass-card, .stat-card, .login-card, .chess-board-container {
-            background: rgba(15, 25, 45, 0.45);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 28px;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
+        .glass-card, .stat-card, .login-card { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 28px; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
         .glass-card:hover, .stat-card:hover { border-color: var(--primary); transform: translateY(-3px); }
         .glass-card.quantum-glow { border-color: var(--quantum); box-shadow: 0 0 30px var(--quantum-glow); }
         .glass-card.gold-glow { border-color: var(--gold); box-shadow: 0 0 30px rgba(255,215,0,0.3); }
@@ -63,95 +56,47 @@
             100% { border-color: rgba(0,180,216,0.3); box-shadow: 0 0 0 0 rgba(0,180,216,0.1); }
         }
         
-        /* ===== LOGIN OVERLAY ===== */
-        .login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5,8,15,0.98);
-            backdrop-filter: blur(20px);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,8,15,0.98); backdrop-filter: blur(20px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-overlay.hidden { display: none; }
-        
-        .login-card {
-            max-width: 480px;
-            width: 100%;
-            padding: 40px 32px;
-            text-align: center;
-            animation: glassPulse 4s ease-in-out infinite;
-        }
+        .login-card { max-width: 480px; width: 100%; padding: 40px 32px; text-align: center; animation: glassPulse 4s ease-in-out infinite; }
         .login-logo { max-width: 300px; width: 100%; margin-bottom: 20px; filter: drop-shadow(0 0 30px var(--primary)); display: block; margin: 0 auto 20px; }
         .login-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
         .login-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 25px; font-family: var(--font-mono); letter-spacing: 2px; }
-        
         .auth-separator { display: flex; align-items: center; gap: 15px; margin: 16px 0; color: var(--text-secondary); font-size: 0.65rem; }
         .auth-separator::before, .auth-separator::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
         .login-error { color: var(--danger); font-size: 0.8rem; margin-top: 10px; min-height: 20px; }
         
-        .btn-primary-custom {
-            border: none;
-            padding: 14px;
-            border-radius: 60px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            color: white;
-            transition: all 0.2s;
-            margin-top: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
+        .btn-primary-custom { border: none; padding: 14px; border-radius: 60px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; transition: all 0.2s; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; }
         .btn-primary-custom:hover { transform: translateY(-2px); filter: brightness(1.05); }
         .btn-google { background: #4285F4; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
         .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
         .btn-demo { background: linear-gradient(135deg, var(--quantum), var(--primary)); box-shadow: 0 4px 15px var(--quantum-glow); }
         .btn-demo:hover { box-shadow: 0 8px 25px var(--quantum-glow); }
         
-        /* ===== HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 50px; filter: drop-shadow(0 0 15px var(--primary)); }
         .brand-text h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .brand-text p { font-size: 0.6rem; color: var(--text-secondary); letter-spacing: 2px; font-family: var(--font-mono); }
         .user-area { display: flex; align-items: center; gap: 15px; background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); padding: 6px 16px; border-radius: 60px; border: 1px solid var(--glass-border); }
-        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--quantum)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--quantum)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-email { font-size: 0.7rem; font-family: var(--font-mono); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .logout-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
         .logout-btn:hover { color: var(--danger); }
         
-        /* ===== STATS ===== */
         .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 25px; }
         .stat-card { padding: 18px; text-align: center; border-radius: 20px; }
         .stat-value { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--secondary), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .stat-label { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; font-family: var(--font-mono); }
         
-        /* ===== NAVIGATION ===== */
         .top-menu { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; }
-        .menu-btn { 
-            background: rgba(15,25,45,0.45); 
-            backdrop-filter: blur(16px); 
-            border: 1px solid var(--glass-border); 
-            border-radius: 40px; 
-            padding: 10px 18px; 
-            color: white; 
-            font-size: 12px; 
-            font-weight: 500; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            font-family: var(--font-exo);
-        }
+        .menu-btn { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 40px; padding: 10px 18px; color: white; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.3s; font-family: var(--font-exo); }
         .menu-btn:hover, .menu-btn.active { background: rgba(0,180,216,0.3); border-color: var(--primary); color: var(--secondary); transform: translateY(-2px); }
         .menu-btn.gold:hover, .menu-btn.gold.active { background: rgba(255,215,0,0.2); border-color: var(--gold); color: var(--gold); }
         .menu-btn.quantum:hover, .menu-btn.quantum.active { background: rgba(138,43,226,0.3); border-color: var(--quantum); color: var(--quantum); }
         .menu-btn.danger:hover, .menu-btn.danger.active { background: rgba(239,71,111,0.2); border-color: var(--danger); color: var(--danger); }
         
-        /* ===== SECTIONS ===== */
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -160,7 +105,6 @@
         .card-header i { font-size: 1.4rem; color: var(--primary); }
         .card-header h3 { font-size: 1.1rem; font-weight: 600; }
         
-        /* ===== CHAT ===== */
         .chat-messages { height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
         .chat-message { padding: 10px 14px; margin-bottom: 10px; border-radius: 18px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; }
         .chat-message.user { background: var(--primary); margin-left: auto; text-align: right; }
@@ -172,13 +116,11 @@
         .chat-speed { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
         .chat-speed input { width: 80px; cursor: pointer; }
         
-        /* ===== QUIZ ===== */
         .quiz-option { display: block; width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; color: white; cursor: pointer; margin-bottom: 8px; text-align: left; transition: 0.2s; }
         .quiz-option:hover { background: rgba(0,180,216,0.2); border-color: var(--primary); }
         .quiz-option.correct { background: var(--success); color: #000; }
         .quiz-option.wrong { background: var(--danger); }
         
-        /* ===== CHESS ===== */
         .chess-board-wrapper { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         #chessBoard { width: 100%; max-width: 450px; aspect-ratio: 1/1; }
         .chess-sidebar { flex: 1; min-width: 200px; }
@@ -191,11 +133,9 @@
         .btn-chess.gold:hover { background: rgba(255,215,0,0.4); }
         .move-history { max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; margin-top: 10px; }
         
-        /* ===== MAP ===== */
         .map-container { height: 300px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); }
         #childMap { height: 100%; width: 100%; background: #0a0f1a; }
         
-        /* ===== UPLOAD ===== */
         .upload-area { border: 2px dashed var(--glass-border); border-radius: 16px; padding: 30px; text-align: center; transition: 0.3s; cursor: pointer; }
         .upload-area:hover { border-color: var(--primary); background: rgba(0,180,216,0.05); }
         .upload-area.dragover { border-color: var(--secondary); background: rgba(0,245,212,0.1); }
@@ -205,14 +145,12 @@
         .analysis-result { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-top: 15px; }
         .analysis-result .concept { display: inline-block; background: rgba(0,180,216,0.2); padding: 4px 12px; border-radius: 20px; margin: 4px; font-size: 0.8rem; }
         
-        /* ===== WHATSAPP ===== */
         .whatsapp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .whatsapp-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 16px; text-align: center; border: 1px solid var(--glass-border); transition: 0.2s; }
         .whatsapp-card:hover { border-color: #25D366; transform: translateY(-2px); }
         .btn-whatsapp { background: #25D366; border: none; padding: 10px 20px; border-radius: 30px; color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 8px; }
         .btn-whatsapp:hover { transform: scale(1.02); filter: brightness(1.05); }
         
-        /* ===== SAFETY ===== */
         .toggle-group { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-top: 10px; flex-wrap: wrap; }
         .toggle-switch { position: relative; width: 50px; height: 28px; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
         .toggle-switch.active { background: var(--primary); }
@@ -222,22 +160,15 @@
         .toggle-switch.active::after { left: 25px; }
         .fall-alert { background: rgba(239,71,111,0.2); border: 1px solid var(--danger); border-radius: 16px; padding: 16px; text-align: center; margin-top: 10px; display: none; }
         
-        /* ===== QUANTUM ===== */
-        .quantum-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(138,43,226,0.2); border: 1px solid var(--quantum); border-radius: 60px; padding: 6px 16px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--secondary); }
-        .quantum-value { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--quantum), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        
-        /* ===== SETTINGS ===== */
         .settings-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 30px; color: white; font-family: var(--font-exo); margin-top: 4px; }
         .settings-input:focus { border-color: var(--primary); outline: none; }
         
-        /* ===== FOOTER ===== */
         .footer { text-align: center; padding: 25px 20px 20px; margin-top: 30px; border-top: 1px solid var(--glass-border); }
         .footer .copyright { font-size: 0.6rem; color: var(--text-secondary); }
         .footer-logo-row { display: flex; justify-content: center; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
         .footer-logo { height: 30px; opacity: 0.6; transition: 0.3s; }
         .footer-logo:hover { opacity: 1; }
         
-        /* ===== TOAST ===== */
         .toast { position: fixed; top: 100px; right: 20px; background: rgba(15,25,45,0.95); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 24px; z-index: 9999; animation: slideUp 0.3s ease-out; max-width: 350px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
         .toast.success { border-color: var(--success); }
         .toast.error { border-color: var(--danger); }
@@ -245,7 +176,19 @@
         .toast .toast-icon { font-size: 1.4rem; margin-right: 12px; }
         .toast .toast-msg { font-size: 0.9rem; }
         
-        /* ===== RESPONSIVE ===== */
+        .chess-square { display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; transition: all 0.2s; position: relative; aspect-ratio: 1/1; }
+        .chess-square:hover { transform: scale(1.05); z-index: 10; }
+        .light-square { background: rgba(42,42,58,0.8); }
+        .dark-square { background: rgba(26,26,46,0.8); }
+        .selected-square { background: rgba(255,215,0,0.4) !important; box-shadow: inset 0 0 30px var(--gold); }
+        .valid-move::after { content: ''; position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, var(--success) 0%, transparent 70%); border-radius: 50%; }
+        .capture-move::after { content: ''; position: absolute; width: 90%; height: 90%; border: 3px solid var(--danger); border-radius: 50%; }
+        
+        .avatar-upload { display: flex; align-items: center; gap: 15px; margin: 10px 0; }
+        .avatar-preview { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--quantum), var(--primary)); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-preview i { font-size: 30px; color: white; }
+        
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .header { flex-direction: column; text-align: center; }
@@ -268,14 +211,6 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-        
-        .chess-square { display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; transition: all 0.2s; position: relative; }
-        .chess-square:hover { transform: scale(1.05); z-index: 10; }
-        .light-square { background: rgba(42,42,58,0.8); }
-        .dark-square { background: rgba(26,26,46,0.8); }
-        .selected-square { background: rgba(255,215,0,0.4) !important; box-shadow: inset 0 0 30px var(--gold); }
-        .valid-move::after { content: ''; position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, var(--success) 0%, transparent 70%); border-radius: 50%; }
-        .capture-move::after { content: ''; position: absolute; width: 90%; height: 90%; border: 3px solid var(--danger); border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -314,7 +249,7 @@
                 </div>
             </div>
             <div class="user-area" id="userArea">
-                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
                 <span class="user-email" id="userEmailDisplay">Demo User</span>
                 <button id="logoutMainBtn" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
             </div>
@@ -432,6 +367,7 @@
                             <button id="chessUndoBtn" class="btn-chess" onclick="undoChessMove()"><i class="fas fa-undo"></i> Undo</button>
                             <button id="chessNewBtn" class="btn-chess primary" onclick="newChessGame()"><i class="fas fa-plus"></i> New</button>
                             <button id="chessHintBtn" class="btn-chess gold" onclick="chessHint()"><i class="fas fa-lightbulb"></i> Hint</button>
+                            <button id="chessWhatsAppBtn" class="btn-chess" style="background:#25D366;border-color:#25D366;" onclick="inviteChessWhatsApp()"><i class="fab fa-whatsapp"></i> Invite</button>
                         </div>
                         <div class="move-history" id="moveHistory">No moves yet</div>
                     </div>
@@ -464,6 +400,14 @@
                 <div id="uploadPreview" class="upload-preview"></div>
                 <div id="uploadStatus" style="margin-top:10px; font-size:0.85rem; color:var(--text-secondary);"></div>
                 <div id="analysisResult" class="analysis-result" style="display:none;"></div>
+                <div id="chatWithDoc" style="display:none; margin-top:15px;">
+                    <h4 style="color:var(--gold);">💬 Ask about this document</h4>
+                    <div class="chat-input-group" style="margin-top:10px;">
+                        <input type="text" id="docQuestionInput" class="chat-input" placeholder="Ask about the document...">
+                        <button id="docQuestionBtn" class="chat-send gold" onclick="askDocumentQuestion()"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div id="docAnswer" style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.3); border-radius:12px; color:var(--text-secondary);"></div>
+                </div>
                 <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="chat-send gold" onclick="analyzeUploads()"><i class="fas fa-microchip"></i> AI Analyze</button>
                     <button class="chat-send" onclick="generateQuizFromUpload()"><i class="fas fa-brain"></i> Generate Quiz</button>
@@ -526,8 +470,8 @@
                 <div style="margin-top:15px;">
                     <h4 style="font-size:0.9rem; color:var(--text-secondary);">Emergency Contacts</h4>
                     <div id="emergencyContacts" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
-                        <span style="background:rgba(239,71,111,0.2); padding:6px 14px; border-radius:30px; border:1px solid var(--danger); font-size:0.8rem;">👤 Mom: +27 73 399 7997</span>
-                        <span style="background:rgba(239,71,111,0.2); padding:6px 14px; border-radius:30px; border:1px solid var(--danger); font-size:0.8rem;">👤 Dad: +27 82 555 1234</span>
+                        <span style="background:rgba(239,71,111,0.2); padding:6px 14px; border-radius:30px; border:1px solid var(--danger); font-size:0.8rem;">👤 Mom: +27 82 555 1234</span>
+                        <span style="background:rgba(239,71,111,0.2); padding:6px 14px; border-radius:30px; border:1px solid var(--danger); font-size:0.8rem;">👤 Dad: +27 82 555 5678</span>
                     </div>
                 </div>
             </div>
@@ -553,8 +497,6 @@
                 </div>
                 <div style="background:rgba(0,0,0,0.3); border-radius:12px; padding:15px; margin-top:10px; font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary);">
                     <div><strong>IBM Job ID:</strong> <span style="color:var(--secondary);">d55p3jgnsj9s73b32lj0</span></div>
-                    <div><strong>Patent:</strong> <span style="color:var(--gold);">2026/05142</span> · Filed: 2026-05-12</div>
-                    <div><strong>Attorney:</strong> ENSafrica — Dr Bernard Dippenaar</div>
                     <div><strong>Status:</strong> <span style="color:var(--success);">✅ Verified · Operational</span></div>
                 </div>
             </div>
@@ -566,12 +508,22 @@
                 <div class="card-header"><i class="fas fa-user-cog"></i><h3>Settings</h3></div>
                 
                 <div style="margin-bottom:20px;">
+                    <label style="display:block; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">Profile Picture</label>
+                    <div class="avatar-upload">
+                        <div class="avatar-preview" id="avatarPreview"><i class="fas fa-user-astronaut"></i></div>
+                        <button class="btn-chess" onclick="document.getElementById('avatarInput').click()"><i class="fas fa-upload"></i> Upload Image</button>
+                        <button class="btn-chess" style="border-color:var(--danger);" onclick="removeAvatar()"><i class="fas fa-trash"></i> Remove</button>
+                        <input type="file" id="avatarInput" style="display:none;" accept="image/*">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:20px;">
                     <label style="display:block; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">Display Name</label>
                     <input type="text" id="profileName" class="settings-input" placeholder="Your name">
                 </div>
                 <div style="margin-bottom:20px;">
                     <label style="display:block; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">Phone Number (WhatsApp)</label>
-                    <input type="tel" id="profilePhone" class="settings-input" placeholder="+27 73 399 7997">
+                    <input type="tel" id="profilePhone" class="settings-input" placeholder="+27 82 555 1234">
                 </div>
                 
                 <div class="toggle-group">
@@ -599,7 +551,6 @@
         // TSHAKA M ACADEMY — COMPLETE PLATFORM (FIXED)
         // ============================================================
         
-        // ===== BACKEND =====
         var BACKEND_URL = "https://tshaka-m-academy-backend.onrender.com/api";
         
         // ===== FIREBASE =====
@@ -632,6 +583,8 @@
         var reasoningMode = false;
         var uploadedFiles = [];
         var uploadedAnalysis = null;
+        var uploadedText = null;
+        var uploadedFileName = null;
         
         // ===== CHESS STATE =====
         var chess = null;
@@ -640,6 +593,8 @@
         var chessScore = 0;
         var chessGamesPlayed = 0;
         var chessGamesWon = 0;
+        var selectedSquare = null;
+        var validMoves = [];
         
         // ===== QUIZ STATE =====
         var quizQuestions = [];
@@ -657,46 +612,23 @@
         var incognitoActive = false;
         
         // ============================================================
-        // SWITCH SECTION — THE FIX FOR BUTTONS
+        // SWITCH SECTION
         // ============================================================
         function switchSection(sectionId) {
             console.log('🔀 Switching to:', sectionId);
-            
-            // Remove active class from all sections
-            document.querySelectorAll('.section').forEach(function(s) {
-                s.classList.remove('active');
-            });
-            
-            // Add active class to target section
+            document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
             var target = document.getElementById('section-' + sectionId);
-            if (target) {
-                target.classList.add('active');
-                console.log('✅ Section activated:', sectionId);
-            } else {
-                console.warn('⚠️ Section not found:', sectionId);
-            }
-            
-            // Update menu button states
+            if (target) { target.classList.add('active'); }
             document.querySelectorAll('.menu-btn').forEach(function(b) {
                 b.classList.remove('active');
-                if (b.dataset.section === sectionId) {
-                    b.classList.add('active');
-                }
+                if (b.dataset.section === sectionId) b.classList.add('active');
             });
-            
-            // Initialize map if switching to map
-            if (sectionId === 'map') {
-                setTimeout(initMap, 300);
-            }
-            
-            // Render chess if switching to chess
-            if (sectionId === 'chess') {
-                setTimeout(renderChessBoard, 100);
-            }
+            if (sectionId === 'map') setTimeout(initMap, 300);
+            if (sectionId === 'chess') setTimeout(renderChessBoard, 100);
         }
         
         // ============================================================
-        // LOGIN FUNCTIONS
+        // LOGIN
         // ============================================================
         function enterDemo() {
             console.log('🚀 DEMO LOGIN');
@@ -766,6 +698,10 @@
                             var data = doc.data();
                             document.getElementById('profileName').value = data.name || '';
                             document.getElementById('profilePhone').value = data.phone || '';
+                            if (data.avatar) {
+                                document.getElementById('userAvatar').innerHTML = '<img src="' + data.avatar + '">';
+                                document.getElementById('avatarPreview').innerHTML = '<img src="' + data.avatar + '">';
+                            }
                         }
                     })
                     .catch(function(e) { console.log('Profile load error:', e); });
@@ -776,13 +712,36 @@
             var uid = isDemo ? 'demo' : (currentUser ? currentUser.uid : 'demo');
             var name = document.getElementById('profileName').value;
             var phone = document.getElementById('profilePhone').value;
-            db.collection('users').doc(uid).set({ name: name, phone: phone, updatedAt: new Date() }, { merge: true })
+            var avatar = document.getElementById('avatarPreview').querySelector('img')?.src || null;
+            var data = { name: name, phone: phone, avatar: avatar, updatedAt: new Date() };
+            db.collection('users').doc(uid).set(data, { merge: true })
                 .then(function() { showToast('✅ Settings saved!', 'success'); })
                 .catch(function(e) { showToast('❌ Error: ' + e.message, 'error'); });
         }
         
+        // ===== AVATAR UPLOAD =====
+        document.getElementById('avatarInput').onchange = function(e) {
+            var file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    var avatarUrl = event.target.result;
+                    document.getElementById('userAvatar').innerHTML = '<img src="' + avatarUrl + '">';
+                    document.getElementById('avatarPreview').innerHTML = '<img src="' + avatarUrl + '">';
+                    showToast('✅ Avatar uploaded! Save settings to keep it.', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        
+        function removeAvatar() {
+            document.getElementById('userAvatar').innerHTML = '<i class="fas fa-user"></i>';
+            document.getElementById('avatarPreview').innerHTML = '<i class="fas fa-user-astronaut"></i>';
+            showToast('🗑️ Avatar removed. Save settings to keep changes.', 'warning');
+        }
+        
         // ============================================================
-        // TOAST NOTIFICATIONS
+        // TOAST
         // ============================================================
         function showToast(msg, type) {
             var existing = document.querySelector('.toast');
@@ -796,7 +755,7 @@
         }
         
         // ============================================================
-        // CHAT
+        // CHAT — WITH BACKEND TIMEOUT
         // ============================================================
         function sendChatMessage() {
             var message = chatInput.value.trim();
@@ -815,6 +774,10 @@
             chatMessages.appendChild(typingDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
+            var timeoutId = setTimeout(function() {
+                typingDiv.textContent = 'Khensani: ⏳ Taking too long... trying again.';
+            }, 15000);
+            
             fetch(BACKEND_URL + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -825,7 +788,10 @@
                     id_token: idToken || 'demo'
                 })
             })
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                clearTimeout(timeoutId);
+                return response.json();
+            })
             .then(function(data) {
                 typingDiv.remove();
                 var aiDiv = document.createElement('div');
@@ -835,48 +801,32 @@
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             })
             .catch(function(error) {
-                typingDiv.remove();
-                var errDiv = document.createElement('div');
-                errDiv.className = 'chat-message ai';
-                errDiv.textContent = 'Khensani: Sorry, I\'m having trouble. Try again.';
-                chatMessages.appendChild(errDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                clearTimeout(timeoutId);
+                typingDiv.textContent = 'Khensani: Sorry, I\'m having trouble connecting. Please try again.';
                 console.error('Chat error:', error);
             });
         }
         
         document.getElementById('chatSendBtn').onclick = sendChatMessage;
         chatInput.onkeypress = function(e) { if (e.key === 'Enter') sendChatMessage(); };
-        
         document.getElementById('chatSpeedSlider').oninput = function() {
             chatSpeed = parseInt(this.value);
             document.getElementById('chatSpeedDisplay').textContent = chatSpeed + ' cps';
         };
-        
         function toggleReasoning() {
             reasoningMode = !reasoningMode;
             document.getElementById('reasoningToggleBtn').textContent = reasoningMode ? 'ON' : 'OFF';
-            document.getElementById('reasoningToggleBtn').style.background = reasoningMode ? 'rgba(0,255,136,0.2)' : '';
         }
         
         // ============================================================
-        // CHESS — FIXED WITH ERROR HANDLING
+        // CHESS — FULL BOARD
         // ============================================================
         function initChess() {
             try {
-                if (typeof Chess !== 'undefined') {
-                    chess = new Chess();
-                    console.log('♟️ Chess engine loaded successfully');
-                } else {
-                    console.warn('⚠️ Chess.js not loaded – using fallback');
-                    chess = createFallbackChess();
-                }
+                if (typeof Chess !== 'undefined') { chess = new Chess(); } 
+                else { chess = createFallbackChess(); }
                 renderChessBoard();
-            } catch(e) {
-                console.error('❌ Chess init error:', e);
-                chess = createFallbackChess();
-                renderChessBoard();
-            }
+            } catch(e) { console.warn('Chess init error:', e); chess = createFallbackChess(); renderChessBoard(); }
         }
         
         function createFallbackChess() {
@@ -905,10 +855,7 @@
                 var fen = chess.fen();
                 boardElement.innerHTML = fenToBoardHtml(fen);
                 updateChessStatus();
-            } catch(e) {
-                console.warn('Chess render error:', e);
-                document.getElementById('chessBoard').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">♟️ Chess unavailable</div>';
-            }
+            } catch(e) { console.warn('Chess render error:', e); }
         }
         
         function fenToBoardHtml(fen) {
@@ -917,27 +864,31 @@
             var rows = board.split('/');
             var html = '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;aspect-ratio:1/1;background:#1a1a2e;padding:8px;border-radius:12px;">';
             var pieceMap = { 'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙' };
-            var rowIdx = 0;
-            for (var r = 0; r < rows.length; r++) {
-                var row = rows[r];
-                var colIdx = 0;
-                for (var c = 0; c < row.length; c++) {
-                    var char = row[c];
-                    if (char >= '1' && char <= '8') {
-                        for (var i = 0; i < parseInt(char); i++) {
-                            var isDark = (rowIdx + colIdx) % 2 === 1;
-                            html += '<div class="chess-square ' + (isDark ? 'dark-square' : 'light-square') + '" data-pos="' + String.fromCharCode(97+colIdx) + (8-rowIdx) + '" onclick="handleChessClick(this)"></div>';
-                            colIdx++;
-                        }
-                    } else {
-                        var isDark = (rowIdx + colIdx) % 2 === 1;
-                        var piece = pieceMap[char] || char;
-                        var color = char === char.toUpperCase() ? '#fff' : '#aaa';
-                        html += '<div class="chess-square ' + (isDark ? 'dark-square' : 'light-square') + '" data-pos="' + String.fromCharCode(97+colIdx) + (8-rowIdx) + '" style="color:' + color + ';text-shadow:0 0 10px rgba(0,180,216,0.3);" onclick="handleChessClick(this)">' + piece + '</div>';
-                        colIdx++;
+            for (var r = 0; r < 8; r++) {
+                for (var c = 0; c < 8; c++) {
+                    var isDark = (r + c) % 2 === 1;
+                    var squareName = String.fromCharCode(97 + c) + (8 - r);
+                    var piece = null;
+                    // Parse FEN to get piece at this square
+                    var rowData = rows[r] || '';
+                    var colPos = 0;
+                    for (var i = 0; i < rowData.length && colPos <= c; i++) {
+                        var ch = rowData[i];
+                        if (ch >= '1' && ch <= '8') { colPos += parseInt(ch); } 
+                        else { if (colPos === c) { piece = ch; } colPos++; }
                     }
+                    var pieceChar = piece ? pieceMap[piece] : '';
+                    var color = piece && piece === piece.toUpperCase() ? '#fff' : '#aaa';
+                    var bg = isDark ? '#2c2c3e' : '#3a3a5c';
+                    var isSelected = (selectedSquare === squareName);
+                    var isMove = validMoves.some(function(m) { return m.to === squareName; });
+                    var isCapture = isMove && chess && chess.get(squareName);
+                    html += '<div class="chess-square ' + (isDark ? 'dark-square' : 'light-square') + 
+                        (isSelected ? ' selected-square' : '') + 
+                        (isMove && !isCapture ? ' valid-move' : '') + 
+                        (isMove && isCapture ? ' capture-move' : '') + 
+                        '" data-pos="' + squareName + '" style="background:' + bg + ';color:' + color + ';text-shadow:0 0 10px rgba(0,180,216,0.3);" onclick="handleChessClick(this)">' + pieceChar + '</div>';
                 }
-                rowIdx++;
             }
             html += '</div>';
             return html;
@@ -953,54 +904,31 @@
                 document.getElementById('chessGamesWon').textContent = chessGamesWon;
                 var history = chess.history({ verbose: true });
                 document.getElementById('moveHistory').textContent = history.map(function(m) { return m.san; }).join(' ') || 'No moves yet';
-            } catch(e) {
-                console.warn('Update chess status error:', e);
-            }
+            } catch(e) { console.warn('Update chess status error:', e); }
         }
-        
-        var selectedSquare = null;
-        var validMoves = [];
         
         function handleChessClick(squareEl) {
             try {
                 if (!chess || isAIThinking || chess.game_over()) return;
                 var pos = squareEl.dataset.pos;
                 if (!pos) return;
-                
                 if (selectedSquare) {
-                    // Try to make a move
                     var move = chess.move({ from: selectedSquare, to: pos, promotion: 'q' });
                     if (move) {
-                        selectedSquare = null;
-                        validMoves = [];
+                        selectedSquare = null; validMoves = [];
                         renderChessBoard();
-                        if (!chess.game_over()) {
-                            setTimeout(function() { makeAIMove(); }, 500);
-                        } else {
-                            if (chess.in_checkmate()) {
-                                chessScore += 10;
-                                chessGamesWon++;
-                                showToast('🎉 Checkmate! You win!', 'success');
-                            } else {
-                                showToast('🤝 Game drawn.', 'warning');
-                            }
+                        if (!chess.game_over()) { setTimeout(function() { makeAIMove(); }, 500); } 
+                        else {
+                            if (chess.in_checkmate()) { chessScore += 10; chessGamesWon++; showToast('🎉 Checkmate! You win!', 'success'); } 
+                            else { showToast('🤝 Game drawn.', 'warning'); }
                         }
                     } else {
                         var piece = chess.get(pos);
-                        if (piece && piece.color === 'w') {
-                            selectSquare(pos);
-                        } else {
-                            selectedSquare = null;
-                            validMoves = [];
-                            renderChessBoard();
-                        }
+                        if (piece && piece.color === 'w') { selectSquare(pos); } 
+                        else { selectedSquare = null; validMoves = []; renderChessBoard(); }
                     }
-                } else {
-                    selectSquare(pos);
-                }
-            } catch(e) {
-                console.warn('Chess click error:', e);
-            }
+                } else { selectSquare(pos); }
+            } catch(e) { console.warn('Chess click error:', e); }
         }
         
         function selectSquare(square) {
@@ -1010,24 +938,8 @@
                     selectedSquare = square;
                     validMoves = chess.moves({ square: square, verbose: true });
                     renderChessBoard();
-                    // Highlight selected square
-                    var squares = document.querySelectorAll('.chess-square');
-                    squares.forEach(function(el) {
-                        if (el.dataset.pos === square) {
-                            el.classList.add('selected-square');
-                        }
-                    });
-                    validMoves.forEach(function(move) {
-                        var target = document.querySelector('.chess-square[data-pos="' + move.to + '"]');
-                        if (target) {
-                            var isCapture = chess.get(move.to);
-                            target.classList.add(isCapture ? 'capture-move' : 'valid-move');
-                        }
-                    });
                 }
-            } catch(e) {
-                console.warn('Select square error:', e);
-            }
+            } catch(e) { console.warn('Select square error:', e); }
         }
         
         function makeAIMove() {
@@ -1039,62 +951,50 @@
                 chess.move(move);
                 renderChessBoard();
                 if (chess.game_over()) {
-                    if (chess.in_checkmate()) {
-                        showToast('♟️ Checkmate! AI wins.', 'error');
-                    } else {
-                        showToast('🤝 Game drawn.', 'warning');
-                    }
+                    if (chess.in_checkmate()) { showToast('♟️ Checkmate! AI wins.', 'error'); } 
+                    else { showToast('🤝 Game drawn.', 'warning'); }
                 }
-            } catch(e) {
-                console.warn('AI move error:', e);
-            }
+            } catch(e) { console.warn('AI move error:', e); }
         }
         
         function newChessGame() {
             try {
-                if (typeof Chess !== 'undefined') {
-                    chess = new Chess();
-                } else {
-                    chess = createFallbackChess();
-                }
-                gameHistory = [];
-                selectedSquare = null;
-                validMoves = [];
+                if (typeof Chess !== 'undefined') { chess = new Chess(); } 
+                else { chess = createFallbackChess(); }
+                gameHistory = []; selectedSquare = null; validMoves = [];
                 chessGamesPlayed++;
                 renderChessBoard();
                 document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
                 document.getElementById('chessGames').textContent = chessGamesPlayed;
                 showToast('♟️ New chess game started!', 'success');
-            } catch(e) {
-                console.warn('New chess game error:', e);
-            }
+            } catch(e) { console.warn('New chess game error:', e); }
         }
         
         function undoChessMove() {
             try {
                 if (!chess) return;
                 if (gameHistory.length === 0) return;
-                chess.undo();
-                gameHistory.pop();
+                chess.undo(); gameHistory.pop();
                 if (chess.turn() === 'b') { chess.undo(); gameHistory.pop(); }
-                selectedSquare = null;
-                validMoves = [];
+                selectedSquare = null; validMoves = [];
                 renderChessBoard();
-            } catch(e) {
-                console.warn('Undo error:', e);
-            }
+            } catch(e) { console.warn('Undo error:', e); }
         }
         
         function chessHint() {
             try {
                 if (!chess) return;
                 var moves = chess.moves({ verbose: true });
-                if (moves.length > 0) {
-                    showToast('💡 Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to, 'info');
-                }
-            } catch(e) {
-                console.warn('Hint error:', e);
-            }
+                if (moves.length > 0) { showToast('💡 Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to, 'info'); }
+            } catch(e) { console.warn('Hint error:', e); }
+        }
+        
+        function inviteChessWhatsApp() {
+            var phone = document.getElementById('profilePhone').value || '27825551234';
+            var clean = phone.replace(/\D/g, '');
+            var msg = encodeURIComponent('♟️ I challenge you to a chess game on Tshaka M Academy! Join me and let\'s play: https://tshaka-m-academy-frontend.onrender.com');
+            window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+            showToast('💬 Invite sent via WhatsApp!', 'success');
         }
         
         // ============================================================
@@ -1103,21 +1003,17 @@
         var questionBank = {
             math: [
                 { q: 'Solve: 2x + 5 = 13', options: ['x = 4', 'x = 5', 'x = 6', 'x = 3'], answer: 0 },
-                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 },
-                { q: 'Simplify: 3(a+2b) - 2(a-b)', options: ['a+8b', 'a+4b', '5a+4b', 'a-4b'], answer: 0 }
+                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 }
             ],
             science: [
                 { q: 'What is the chemical symbol for water?', options: ['H2O', 'CO2', 'NaCl', 'HCl'], answer: 0 },
-                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 },
-                { q: 'What is the speed of light approximately?', options: ['3×10^8 m/s', '3×10^6 m/s', '3×10^10 m/s', '3×10^4 m/s'], answer: 0 }
+                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 }
             ],
             history: [
-                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 },
-                { q: 'Who was the first President of South Africa?', options: ['Nelson Mandela', 'Thabo Mbeki', 'FW de Klerk', 'PW Botha'], answer: 0 }
+                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 }
             ],
             coding: [
-                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None of the above'], answer: 0 },
-                { q: 'Which language is used for web styling?', options: ['CSS', 'HTML', 'Python', 'Java'], answer: 0 }
+                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None'], answer: 0 }
             ]
         };
         
@@ -1125,24 +1021,14 @@
             var subject = document.getElementById('quizSubject').value;
             var bank = questionBank[subject] || questionBank.math;
             quizQuestions = bank.map(function(q) { return { q: q.q, options: q.options.slice(), answer: q.answer }; });
-            currentQuestionIndex = 0;
-            quizScore = 0;
-            quizCorrect = 0;
-            quizTotal = quizQuestions.length;
-            quizStreak = 0;
-            renderQuizQuestion();
-            updateQuizStats();
+            currentQuestionIndex = 0; quizScore = 0; quizCorrect = 0; quizTotal = quizQuestions.length; quizStreak = 0;
+            renderQuizQuestion(); updateQuizStats();
             document.getElementById('quizCount').textContent = parseInt(document.getElementById('quizCount').textContent) + 1;
             showToast('📝 Quiz generated! ' + quizTotal + ' questions.', 'success');
         }
         
         function resetQuiz() {
-            quizQuestions = [];
-            currentQuestionIndex = 0;
-            quizScore = 0;
-            quizCorrect = 0;
-            quizTotal = 0;
-            quizStreak = 0;
+            quizQuestions = []; currentQuestionIndex = 0; quizScore = 0; quizCorrect = 0; quizTotal = 0; quizStreak = 0;
             document.getElementById('quizContainer').innerHTML = '<p style="color:var(--text-secondary);">Select a subject and click Generate.</p>';
             updateQuizStats();
         }
@@ -1166,16 +1052,8 @@
             var correct = q.answer;
             var allOptions = document.querySelectorAll('.quiz-option');
             allOptions.forEach(function(btn) { btn.disabled = true; });
-            if (idx === correct) {
-                el.classList.add('correct');
-                quizScore++;
-                quizCorrect++;
-                quizStreak++;
-            } else {
-                el.classList.add('wrong');
-                allOptions[correct].classList.add('correct');
-                quizStreak = 0;
-            }
+            if (idx === correct) { el.classList.add('correct'); quizScore++; quizCorrect++; quizStreak++; } 
+            else { el.classList.add('wrong'); allOptions[correct].classList.add('correct'); quizStreak = 0; }
             updateQuizStats();
             setTimeout(function() { currentQuestionIndex++; renderQuizQuestion(); }, 1500);
         }
@@ -1192,30 +1070,17 @@
         // ============================================================
         function initMap() {
             try {
-                if (map) return;
-                if (typeof L === 'undefined') {
-                    console.warn('Leaflet not loaded');
-                    return;
-                }
+                if (map || typeof L === 'undefined') return;
                 map = L.map('childMap').setView([-26.1395, 28.4134], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap',
-                    subdomains: 'abcd'
-                }).addTo(map);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', subdomains: 'abcd' }).addTo(map);
                 L.marker([-26.1375, 28.4140], {
-                    icon: L.divIcon({
-                        html: '<div style="background:linear-gradient(135deg,#00B4D8,#8A2BE2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;"><i class="fas fa-child" style="color:white;"></i></div>',
-                        iconSize: [30,30]
-                    })
+                    icon: L.divIcon({ html: '<div style="background:linear-gradient(135deg,#00B4D8,#8A2BE2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;"><i class="fas fa-child" style="color:white;"></i></div>', iconSize: [30,30] })
                 }).addTo(map).bindPopup('📍 Child Location');
                 L.circle([-26.1375, 28.4140], { radius: 200, color: '#00FF88', fillColor: '#00FF88', fillOpacity: 0.1 }).addTo(map).bindPopup('🟢 Safe Zone');
                 L.circle([-26.1395, 28.4110], { radius: 150, color: '#FFD700', fillColor: '#FFD700', fillOpacity: 0.1 }).addTo(map).bindPopup('🏫 School');
                 L.circle([-26.1350, 28.4160], { radius: 100, color: '#00B4D8', fillColor: '#00B4D8', fillOpacity: 0.1 }).addTo(map).bindPopup('🏠 Home');
                 L.circle([-26.1410, 28.4190], { radius: 80, color: '#00F5D4', fillColor: '#00F5D4', fillOpacity: 0.1 }).addTo(map).bindPopup('🌳 Park');
-                console.log('📍 Map initialized');
-            } catch(e) {
-                console.warn('Map init error:', e);
-            }
+            } catch(e) { console.warn('Map init error:', e); }
         }
         
         function refreshMap() {
@@ -1224,26 +1089,12 @@
         }
         
         // ============================================================
-        // UPLOAD
+        // UPLOAD — WITH PDF.JS PARSING
         // ============================================================
-        document.getElementById('uploadArea').ondragover = function(e) {
-            e.preventDefault();
-            this.classList.add('dragover');
-        };
-        document.getElementById('uploadArea').ondragleave = function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-        };
-        document.getElementById('uploadArea').ondrop = function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-            var files = e.dataTransfer.files;
-            handleFiles(files);
-        };
-        document.getElementById('fileInput').onchange = function(e) {
-            handleFiles(e.target.files);
-            this.value = '';
-        };
+        document.getElementById('uploadArea').ondragover = function(e) { e.preventDefault(); this.classList.add('dragover'); };
+        document.getElementById('uploadArea').ondragleave = function(e) { e.preventDefault(); this.classList.remove('dragover'); };
+        document.getElementById('uploadArea').ondrop = function(e) { e.preventDefault(); this.classList.remove('dragover'); handleFiles(e.dataTransfer.files); };
+        document.getElementById('fileInput').onchange = function(e) { handleFiles(e.target.files); this.value = ''; };
         
         function handleFiles(files) {
             for (var i = 0; i < files.length; i++) {
@@ -1254,7 +1105,7 @@
                 item.innerHTML = '<i class="fas fa-file"></i> ' + files[i].name + ' (' + (files[i].size/1024).toFixed(1) + ' KB)';
                 preview.appendChild(item);
             }
-            document.getElementById('uploadStatus').textContent = '📁 ' + uploadedFiles.length + ' file(s) ready for analysis.';
+            document.getElementById('uploadStatus').textContent = '📁 ' + uploadedFiles.length + ' file(s) ready. Click "AI Analyze" to process.';
             showToast('📎 ' + files.length + ' file(s) uploaded!', 'success');
         }
         
@@ -1264,28 +1115,128 @@
                 return;
             }
             var status = document.getElementById('uploadStatus');
-            status.textContent = '⏳ AI analyzing ' + uploadedFiles.length + ' file(s)...';
+            status.textContent = '⏳ Processing ' + uploadedFiles.length + ' file(s)...';
             
             var file = uploadedFiles[0];
+            uploadedFileName = file.name;
+            var fileExt = file.name.split('.').pop().toLowerCase();
+            
+            if (fileExt === 'pdf') {
+                // Use PDF.js to extract text
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var typedarray = new Uint8Array(e.target.result);
+                    pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                        var numPages = pdf.numPages;
+                        var pagePromises = [];
+                        for (var i = 1; i <= Math.min(numPages, 20); i++) {
+                            pagePromises.push(pdf.getPage(i).then(function(page) {
+                                return page.getTextContent().then(function(textContent) {
+                                    return textContent.items.map(function(item) { return item.str; }).join(' ');
+                                });
+                            }));
+                        }
+                        Promise.all(pagePromises).then(function(pages) {
+                            var fullText = pages.join('\n');
+                            uploadedText = fullText;
+                            displayAnalysis(file.name, fullText);
+                        });
+                    }).catch(function(err) {
+                        status.textContent = '❌ Error reading PDF: ' + err.message;
+                        showToast('❌ PDF read error: ' + err.message, 'error');
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (fileExt === 'txt' || fileExt === 'html' || fileExt === 'md') {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedText = e.target.result;
+                    displayAnalysis(file.name, uploadedText);
+                };
+                reader.readAsText(file);
+            } else if (fileExt === 'docx') {
+                showToast('⚠️ DOCX parsing coming soon. For now, convert to PDF or TXT.', 'warning');
+                status.textContent = '⚠️ DOCX support coming soon.';
+            } else {
+                uploadedText = 'File: ' + file.name + ' (binary file)';
+                displayAnalysis(file.name, uploadedText);
+            }
+        }
+        
+        function displayAnalysis(fileName, text) {
+            var status = document.getElementById('uploadStatus');
             var preview = document.getElementById('analysisResult');
             preview.style.display = 'block';
-            preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
-                '<p><strong>File:</strong> ' + file.name + '</p>' +
-                '<p><strong>Size:</strong> ' + (file.size/1024).toFixed(1) + ' KB</p>' +
-                '<div><strong>Key Concepts:</strong><br>' +
-                '<span class="concept">' + file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ') + '</span>' +
-                '<span class="concept">Education</span>' +
-                '<span class="concept">Learning</span></div>' +
-                '<p style="margin-top:8px;"><strong>Difficulty:</strong> Intermediate</p>' +
-                '<p><strong>Prerequisites:</strong> Basic understanding of the subject</p>';
-            uploadedAnalysis = { fileName: file.name, keyConcepts: ['Education', 'Learning', file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ')] };
-            status.textContent = '✅ Analysis complete! ' + uploadedFiles.length + ' file(s) processed.';
-            showToast('✅ AI analysis complete!', 'success');
+            
+            // Send to backend for AI analysis
+            fetch(BACKEND_URL + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: 'Analyze this document and extract key concepts, difficulty level, prerequisites, and learning objectives. Document content: ' + text.substring(0, 8000),
+                    grade: '10',
+                    subject: 'General',
+                    id_token: idToken || 'demo'
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                var reply = data.reply || 'Analysis complete.';
+                preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
+                    '<p><strong>File:</strong> ' + fileName + '</p>' +
+                    '<p><strong>Size:</strong> ' + (text.length / 1024).toFixed(1) + ' KB text</p>' +
+                    '<div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; max-height:200px; overflow-y:auto; white-space:pre-wrap; font-size:0.85rem; color:var(--text-secondary);">' + reply + '</div>';
+                uploadedAnalysis = { fileName: fileName, text: text, analysis: reply };
+                document.getElementById('chatWithDoc').style.display = 'block';
+                status.textContent = '✅ Analysis complete! You can ask questions about this document.';
+                showToast('✅ AI analysis complete!', 'success');
+            })
+            .catch(function(error) {
+                preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
+                    '<p><strong>File:</strong> ' + fileName + '</p>' +
+                    '<p><strong>Size:</strong> ' + (text.length / 1024).toFixed(1) + ' KB text</p>' +
+                    '<div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; max-height:200px; overflow-y:auto; white-space:pre-wrap; font-size:0.85rem; color:var(--text-secondary);">' + text.substring(0, 1000) + '...\n\n(Full analysis available with backend connection)</div>';
+                uploadedAnalysis = { fileName: fileName, text: text, analysis: text.substring(0, 500) };
+                document.getElementById('chatWithDoc').style.display = 'block';
+                status.textContent = '✅ Text extracted! ' + text.length + ' characters.';
+                showToast('📄 Text extracted from document!', 'success');
+            });
+        }
+        
+        function askDocumentQuestion() {
+            var question = document.getElementById('docQuestionInput').value.trim();
+            if (!question) return;
+            document.getElementById('docQuestionInput').value = '';
+            var answerDiv = document.getElementById('docAnswer');
+            answerDiv.innerHTML = '⏳ Thinking...';
+            
+            if (!uploadedText) {
+                answerDiv.innerHTML = '⚠️ No document content to analyze. Please upload and analyze a document first.';
+                return;
+            }
+            
+            fetch(BACKEND_URL + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: 'Based on this document: "' + uploadedText.substring(0, 6000) + '" Answer this question: ' + question,
+                    grade: '10',
+                    subject: 'General',
+                    id_token: idToken || 'demo'
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                answerDiv.innerHTML = data.reply || 'No answer available.';
+            })
+            .catch(function(error) {
+                answerDiv.innerHTML = '❌ Error: ' + error.message;
+            });
         }
         
         function generateQuizFromUpload() {
             if (!uploadedAnalysis) {
-                showToast('⚠️ Please analyze files first.', 'warning');
+                showToast('⚠️ Please analyze a document first.', 'warning');
                 return;
             }
             document.getElementById('quizSubject').value = 'general';
@@ -1299,7 +1250,7 @@
                 showToast('⚠️ No files to share.', 'warning');
                 return;
             }
-            var phone = document.getElementById('profilePhone').value || '27733997997';
+            var phone = document.getElementById('profilePhone').value || '27825551234';
             var clean = phone.replace(/\D/g, '');
             var msg = encodeURIComponent('📚 Tshaka M Academy - Study Material\nFiles: ' + uploadedFiles.map(function(f) { return f.name; }).join(', ') + '\n\nPowered by MindTech Industries');
             window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
@@ -1310,7 +1261,7 @@
         // WHATSAPP
         // ============================================================
         function openWhatsApp(type) {
-            var phone = document.getElementById('profilePhone').value || '27733997997';
+            var phone = document.getElementById('profilePhone').value || '27825551234';
             var clean = phone.replace(/\D/g, '');
             var msg = encodeURIComponent('Hello from Tshaka M Academy! I\'m using the ' + type.replace('_', ' ') + ' group.');
             window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
@@ -1330,12 +1281,9 @@
         }
         
         function testFallAlert() {
-            if (!fallActive) {
-                showToast('⚠️ Fall detection is OFF. Turn it on first.', 'warning');
-                return;
-            }
+            if (!fallActive) { showToast('⚠️ Fall detection is OFF. Turn it on first.', 'warning'); return; }
             document.getElementById('fallAlert').style.display = 'block';
-            var phone = document.getElementById('profilePhone').value || '27733997997';
+            var phone = document.getElementById('profilePhone').value || '27825551234';
             var clean = phone.replace(/\D/g, '');
             if (clean.length > 5) {
                 window.open('https://wa.me/' + clean + '?text=' + encodeURIComponent('🚨 Emergency: Fall detected by Tshaka M Academy app.'), '_blank');
@@ -1345,7 +1293,7 @@
         }
         
         function addEmergencyContact() {
-            var phone = prompt('Enter emergency contact phone number (e.g., +27 73 399 7997):');
+            var phone = prompt('Enter emergency contact phone number (e.g., +27 82 555 1234):');
             if (phone) {
                 var container = document.getElementById('emergencyContacts');
                 var span = document.createElement('span');
@@ -1362,7 +1310,7 @@
                 var mag = Math.sqrt((e.accelerationIncludingGravity.x||0)*(e.accelerationIncludingGravity.x||0) + (e.accelerationIncludingGravity.y||0)*(e.accelerationIncludingGravity.y||0) + (e.accelerationIncludingGravity.z||0)*(e.accelerationIncludingGravity.z||0));
                 if (mag > 25) {
                     document.getElementById('fallAlert').style.display = 'block';
-                    var phone = document.getElementById('profilePhone').value || '27733997997';
+                    var phone = document.getElementById('profilePhone').value || '27825551234';
                     var clean = phone.replace(/\D/g, '');
                     if (clean.length > 5) {
                         window.open('https://wa.me/' + clean + '?text=' + encodeURIComponent('🚨 Emergency: Fall detected by Tshaka M Academy app.'), '_blank');
@@ -1399,48 +1347,27 @@
                 },
                 interactivity: { events: { onhover: { enable: true, mode: "repulse" } } }
             });
-        } catch(e) {
-            console.warn('Particles error:', e);
-        }
+        } catch(e) { console.warn('Particles error:', e); }
         
         // ============================================================
         // INIT
         // ============================================================
         function initApp() {
             console.log('🚀 Tshaka M Academy · Initializing...');
-            
-            // Initialize chess
             initChess();
-            
-            // Initialize map after delay
             setTimeout(function() {
-                if (document.getElementById('section-map').classList.contains('active')) {
-                    initMap();
-                }
+                if (document.getElementById('section-map').classList.contains('active')) { initMap(); }
             }, 500);
-            
-            // Set streak
             document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
             document.getElementById('chessGames').textContent = chessGamesPlayed;
-            
             console.log('✅ Tshaka M Academy · Complete Platform Loaded');
             console.log('   👤 User:', isDemo ? 'Demo' : (currentUser ? currentUser.email : 'None'));
             console.log('   📡 Backend:', BACKEND_URL);
             console.log('   ⚛️ Quantum: CHSH S=2.76, 98.4% correlation');
-            console.log('   ♟️ Chess: Engine ready');
-            console.log('   📍 Map: Leaflet.js ready');
-            console.log('   📤 Upload: Drag & drop ready');
-            console.log('   💬 WhatsApp: Integration ready');
-            console.log('   🛡️ Safety: Fall detection ready');
-            console.log('   🔀 Navigation: All buttons working');
         }
         
-        // ============================================================
-        // START
-        // ============================================================
         console.log('✅ Tshaka M Academy · Loading...');
-        console.log('   Click "Enter Demo" or "Sign in with Google" to start.');
     </script>
 </body>
 </html>
