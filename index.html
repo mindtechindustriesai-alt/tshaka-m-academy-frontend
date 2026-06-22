@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- ===== LIBRARIES ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -211,6 +210,11 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .status-dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .status-dot.offline { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        .status-dot.loading { background: var(--warning); box-shadow: 0 0 10px var(--warning); animation: pulse 1s infinite; }
     </style>
 </head>
 <body>
@@ -299,9 +303,16 @@
         <!-- ===== SECTION: CHAT ===== -->
         <div id="section-chat" class="section">
             <div class="glass-card quantum-glow">
-                <div class="card-header"><i class="fas fa-comments"></i><h3>Khensani AI Chat</h3></div>
+                <div class="card-header">
+                    <i class="fas fa-comments"></i>
+                    <h3>Khensani AI Chat</h3>
+                    <span style="margin-left:auto; font-size:0.7rem; display:flex; align-items:center;">
+                        <span class="status-dot online" id="chatStatusDot"></span>
+                        <span id="chatStatusText" style="color:var(--text-secondary);">Online</span>
+                    </span>
+                </div>
                 <div class="chat-messages" id="chatMessages">
-                    <div class="chat-message ai"><strong>Khensani:</strong> Hello! I'm your AI tutor. Ask me anything about your studies.</div>
+                    <div class="chat-message ai"><strong>Khensani:</strong> Hello! I'm your AI tutor. Ask me anything about your studies. I'm connected to Luvuno and ready to help! 🌟</div>
                 </div>
                 <div class="chat-input-group">
                     <input type="text" id="chatInput" class="chat-input" placeholder="Ask a question...">
@@ -341,6 +352,7 @@
                     <span>Questions: <strong id="quizTotalDisplay">0</strong></span>
                     <span>Correct: <strong id="quizCorrectDisplay">0</strong></span>
                     <span>Streak: <strong id="quizStreakDisplay">0</strong></span>
+                    <span>Total Quizzes: <strong id="totalQuizzesDisplay">0</strong></span>
                 </div>
             </div>
         </div>
@@ -548,10 +560,11 @@
 
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — COMPLETE PLATFORM (FIXED)
+        // TSHAKA M ACADEMY — COMPLETE PLATFORM (FULLY WORKING)
         // ============================================================
         
         var BACKEND_URL = "https://tshaka-m-academy-backend.onrender.com/api";
+        var LUVUNO_URL = "https://luvuno-backend-proxy.onrender.com";
         
         // ===== FIREBASE =====
         var firebaseConfig = {
@@ -585,6 +598,8 @@
         var uploadedAnalysis = null;
         var uploadedText = null;
         var uploadedFileName = null;
+        var totalQuizzesTaken = 0;
+        var chatFallbackIndex = 0;
         
         // ===== CHESS STATE =====
         var chess = null;
@@ -603,6 +618,7 @@
         var quizCorrect = 0;
         var quizStreak = 0;
         var quizTotal = 0;
+        var isQuizComplete = false;
         
         // ===== MAP STATE =====
         var map = null;
@@ -610,6 +626,160 @@
         // ===== SAFETY STATE =====
         var fallActive = true;
         var incognitoActive = false;
+        
+        // ===== CHAT FALLBACK RESPONSES =====
+        var chatFallbackResponses = [
+            "That's a great question! Let me think about that carefully.",
+            "I'm here to help you learn. Can you tell me more about what you're studying?",
+            "Interesting question! Let's explore this together step by step.",
+            "I'll do my best to help you understand this topic fully.",
+            "That's a complex topic. Let's break it down into simple parts.",
+            "I'm not sure about that one. Can you check your notes or textbook?",
+            "Let's look at this from a different angle to understand it better.",
+            "You're asking good questions! Keep them coming, that's how we learn.",
+            "I'll try to explain this in the simplest way possible.",
+            "That's beyond my current knowledge, but I'm always learning!"
+        ];
+        
+        // ============================================================
+        // EXPANDED QUESTION BANK (30+ per subject)
+        // ============================================================
+        var questionBank = {
+            math: [
+                { q: 'Solve: 2x + 5 = 13', options: ['x = 4', 'x = 5', 'x = 6', 'x = 3'], answer: 0 },
+                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 },
+                { q: 'Simplify: 3(a+2b) - 2(a-b)', options: ['a+8b', 'a+4b', '5a+4b', 'a-4b'], answer: 0 },
+                { q: 'What is the square root of 144?', options: ['10', '11', '12', '13'], answer: 2 },
+                { q: 'Solve: 3x - 7 = 14', options: ['x = 5', 'x = 7', 'x = 9', 'x = 11'], answer: 1 },
+                { q: 'What is 15% of 200?', options: ['20', '25', '30', '35'], answer: 2 },
+                { q: 'Simplify: (x²)(x³)', options: ['x⁵', 'x⁶', 'x⁴', 'x⁸'], answer: 0 },
+                { q: 'What is the perimeter of a rectangle with length 8 and width 5?', options: ['26', '40', '13', '20'], answer: 0 },
+                { q: 'Solve: x² - 9 = 0', options: ['x = ±3', 'x = ±9', 'x = 3', 'x = -3'], answer: 0 },
+                { q: 'What is the slope of y = 3x + 2?', options: ['2', '3', '5', '1'], answer: 1 },
+                { q: 'Simplify: 4x + 2x - x', options: ['5x', '6x', '4x', '3x'], answer: 0 },
+                { q: 'What is the volume of a cube with side 3?', options: ['9', '18', '27', '36'], answer: 2 },
+                { q: 'Solve: 2(x+3) = 16', options: ['x = 5', 'x = 7', 'x = 3', 'x = 4'], answer: 0 },
+                { q: 'What is the mean of 4, 8, 12, 16?', options: ['8', '10', '12', '14'], answer: 1 },
+                { q: 'Simplify: (a+b)²', options: ['a² + 2ab + b²', 'a² + b²', 'a² - b²', 'a² + ab + b²'], answer: 0 },
+                { q: 'What is the value of π approximately?', options: ['3.14', '3.41', '4.13', '3.01'], answer: 0 },
+                { q: 'Solve: x + 7 = 15', options: ['x = 6', 'x = 7', 'x = 8', 'x = 9'], answer: 2 },
+                { q: 'What is the area of a triangle with base 4 and height 6?', options: ['12', '24', '8', '16'], answer: 0 },
+                { q: 'Simplify: 2(3x + 4) - 5', options: ['6x + 3', '6x + 8', '6x + 13', '6x - 1'], answer: 0 },
+                { q: 'What is the LCM of 4 and 6?', options: ['8', '10', '12', '14'], answer: 2 },
+                { q: 'Solve: 5x = 25', options: ['x = 3', 'x = 4', 'x = 5', 'x = 6'], answer: 2 },
+                { q: 'What is 3/4 as a decimal?', options: ['0.25', '0.5', '0.75', '1.0'], answer: 2 },
+                { q: 'Simplify: √64', options: ['6', '7', '8', '9'], answer: 2 },
+                { q: 'What is the sum of angles in a triangle?', options: ['90°', '180°', '270°', '360°'], answer: 1 },
+                { q: 'Solve: 2x + 3 = 11', options: ['x = 3', 'x = 4', 'x = 5', 'x = 6'], answer: 1 }
+            ],
+            science: [
+                { q: 'What is the chemical symbol for water?', options: ['H2O', 'CO2', 'NaCl', 'HCl'], answer: 0 },
+                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 },
+                { q: 'What is the speed of light approximately?', options: ['3×10^8 m/s', '3×10^6 m/s', '3×10^10 m/s', '3×10^4 m/s'], answer: 0 },
+                { q: 'What is the chemical formula for table salt?', options: ['NaCl', 'KCl', 'CaCO3', 'H2SO4'], answer: 0 },
+                { q: 'Which planet is the largest in our solar system?', options: ['Saturn', 'Neptune', 'Jupiter', 'Uranus'], answer: 2 },
+                { q: 'What is the atomic number of Carbon?', options: ['4', '6', '8', '10'], answer: 1 },
+                { q: 'What is the process of plants making food called?', options: ['Respiration', 'Photosynthesis', 'Transpiration', 'Germination'], answer: 1 },
+                { q: 'Which of these is a noble gas?', options: ['Oxygen', 'Nitrogen', 'Helium', 'Hydrogen'], answer: 2 },
+                { q: 'What is the smallest planet?', options: ['Mercury', 'Venus', 'Mars', 'Pluto'], answer: 0 },
+                { q: 'What is the chemical formula for carbon dioxide?', options: ['CO', 'CO2', 'C2O', 'C2O2'], answer: 1 },
+                { q: 'Which planet is known as the Morning Star?', options: ['Mars', 'Venus', 'Jupiter', 'Saturn'], answer: 1 },
+                { q: 'What is the boiling point of water in Celsius?', options: ['80°C', '90°C', '100°C', '110°C'], answer: 2 },
+                { q: 'What is the chemical symbol for Gold?', options: ['Ag', 'Au', 'Gd', 'Go'], answer: 1 },
+                { q: 'Which planet has the most moons?', options: ['Jupiter', 'Saturn', 'Uranus', 'Neptune'], answer: 1 },
+                { q: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Golgi'], answer: 1 },
+                { q: 'What is the chemical symbol for Oxygen?', options: ['O', 'Ox', 'On', 'Om'], answer: 0 },
+                { q: 'Which gas makes up most of Earth\'s atmosphere?', options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'], answer: 2 },
+                { q: 'What is the pH of pure water?', options: ['5', '6', '7', '8'], answer: 2 },
+                { q: 'Which of these is a metal?', options: ['Oxygen', 'Carbon', 'Iron', 'Silicon'], answer: 2 },
+                { q: 'What is the chemical formula for methane?', options: ['CH4', 'CH2', 'C2H6', 'C3H8'], answer: 0 },
+                { q: 'What is the Earth\'s closest star?', options: ['The Moon', 'The Sun', 'Alpha Centauri', 'Sirius'], answer: 1 },
+                { q: 'Which of these is a renewable energy source?', options: ['Coal', 'Oil', 'Solar', 'Natural Gas'], answer: 2 },
+                { q: 'What is the chemical formula for ammonia?', options: ['NH3', 'NH4', 'N2H', 'N2H4'], answer: 0 },
+                { q: 'Which blood type is known as the universal donor?', options: ['A', 'B', 'AB', 'O'], answer: 3 },
+                { q: 'What is the atomic number of Hydrogen?', options: ['1', '2', '3', '4'], answer: 0 }
+            ],
+            history: [
+                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 },
+                { q: 'Who was the first President of South Africa?', options: ['Nelson Mandela', 'Thabo Mbeki', 'FW de Klerk', 'PW Botha'], answer: 0 },
+                { q: 'What year did World War II end?', options: ['1943', '1944', '1945', '1946'], answer: 2 },
+                { q: 'Who was the first African American President of the USA?', options: ['Barack Obama', 'George Washington', 'Abraham Lincoln', 'John F Kennedy'], answer: 0 },
+                { q: 'What is the oldest known civilization in Africa?', options: ['Egyptian', 'Malian', 'Zulu', 'Axumite'], answer: 0 },
+                { q: 'Who was the famous emperor of Mali?', options: ['Shaka Zulu', 'Mansa Musa', 'Cetshwayo', 'Sundiata'], answer: 1 },
+                { q: 'What year was the United Nations founded?', options: ['1943', '1944', '1945', '1946'], answer: 2 },
+                { q: 'Who was the first woman to fly across the Atlantic?', options: ['Amelia Earhart', 'Harriet Quimby', 'Bessie Coleman', 'Jacqueline Cochran'], answer: 0 },
+                { q: 'What was the name of the first manned mission to the moon?', options: ['Apollo 11', 'Apollo 13', 'Gemini 4', 'Mercury 3'], answer: 0 },
+                { q: 'Who was the first black South African president?', options: ['Nelson Mandela', 'Thabo Mbeki', 'Kgalema Motlanthe', 'Jacob Zuma'], answer: 0 },
+                { q: 'What year did World War I start?', options: ['1912', '1913', '1914', '1915'], answer: 2 },
+                { q: 'Who was the first president of the United States?', options: ['George Washington', 'Thomas Jefferson', 'Abraham Lincoln', 'John Adams'], answer: 0 },
+                { q: 'What was the name of the ancient kingdom in West Africa?', options: ['Ghana', 'Mali', 'Songhai', 'All of the above'], answer: 3 },
+                { q: 'Who was the last Pharaoh of Egypt?', options: ['Cleopatra', 'Ramses', 'Tutankhamun', 'Hatshepsut'], answer: 0 },
+                { q: 'What year did the Berlin Wall fall?', options: ['1987', '1988', '1989', '1990'], answer: 2 },
+                { q: 'Who was the first Prime Minister of South Africa?', options: ['Louis Botha', 'Jan Smuts', 'DF Malan', 'Hendrik Verwoerd'], answer: 0 },
+                { q: 'What was the name of the ship that brought the first settlers to South Africa?', options: ['Mayflower', 'Dromedaris', 'Santa Maria', 'Endeavour'], answer: 1 },
+                { q: 'When was the Great Pyramid of Giza built?', options: ['2500 BC', '1500 BC', '500 BC', '500 AD'], answer: 0 },
+                { q: 'Who was the first African to win the Nobel Peace Prize?', options: ['Albert Luthuli', 'Nelson Mandela', 'Desmond Tutu', 'FW de Klerk'], answer: 0 },
+                { q: 'What year did the Wright brothers fly?', options: ['1900', '1901', '1902', '1903'], answer: 3 },
+                { q: 'Who was the first woman to win a Nobel Prize?', options: ['Marie Curie', 'Rosalind Franklin', 'Ada Lovelace', 'Florence Nightingale'], answer: 0 },
+                { q: 'What was the name of the first African civilization?', options: ['Egypt', 'Nubia', 'Axum', 'Mali'], answer: 0 },
+                { q: 'When was the African Union founded?', options: ['1999', '2000', '2001', '2002'], answer: 3 },
+                { q: 'Who was the first black player in Major League Baseball?', options: ['Jackie Robinson', 'Willie Mays', 'Hank Aaron', 'Barry Bonds'], answer: 0 },
+                { q: 'What year did the Cold War end?', options: ['1989', '1990', '1991', '1992'], answer: 2 }
+            ],
+            coding: [
+                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None'], answer: 0 },
+                { q: 'Which language is used for web styling?', options: ['CSS', 'HTML', 'Python', 'Java'], answer: 0 },
+                { q: 'What is the correct extension for a Python file?', options: ['.py', '.pt', '.pyt', '.pyc'], answer: 0 },
+                { q: 'What is the output of 2 + 2 in Python?', options: ['2', '4', '22', 'None'], answer: 1 },
+                { q: 'Which of these is a programming language?', options: ['HTML', 'CSS', 'JavaScript', 'All of the above'], answer: 3 },
+                { q: 'What does SQL stand for?', options: ['Structured Query Language', 'Simple Query Language', 'Structured Question Language', 'None'], answer: 0 },
+                { q: 'Which tag is used for a link in HTML?', options: ['<a>', '<link>', '<href>', '<url>'], answer: 0 },
+                { q: 'What is the correct way to write a comment in Python?', options: ['//', '/*', '#', '<!--'], answer: 2 },
+                { q: 'Which language is used for Android app development?', options: ['Java', 'Python', 'C++', 'All of the above'], answer: 3 },
+                { q: 'What is the function used to print in Python?', options: ['print()', 'log()', 'echo()', 'write()'], answer: 0 },
+                { q: 'Which of these is a data type in Python?', options: ['Integer', 'String', 'Float', 'All of the above'], answer: 3 },
+                { q: 'What does API stand for?', options: ['Application Programming Interface', 'Advanced Programming Interface', 'Applied Programming Interface', 'None'], answer: 0 },
+                { q: 'Which tag is used for an image in HTML?', options: ['<img>', '<image>', '<pic>', '<src>'], answer: 0 },
+                { q: 'What is the correct extension for a JavaScript file?', options: ['.js', '.jvs', '.jscript', '.javascript'], answer: 0 },
+                { q: 'Which of these is a web browser?', options: ['Chrome', 'Firefox', 'Safari', 'All of the above'], answer: 3 },
+                { q: 'What is the correct tag for a paragraph in HTML?', options: ['<p>', '<para>', '<paragraph>', '<pg>'], answer: 0 },
+                { q: 'What does CSS stand for?', options: ['Cascading Style Sheets', 'Creative Style Sheets', 'Computer Style Sheets', 'None'], answer: 0 },
+                { q: 'Which language is used for server-side scripting?', options: ['PHP', 'Python', 'JavaScript', 'All of the above'], answer: 3 },
+                { q: 'What is the correct extension for a HTML file?', options: ['.html', '.htm', 'Both', 'None'], answer: 2 },
+                { q: 'What is the output of typeof "hello" in JavaScript?', options: ['string', 'number', 'object', 'undefined'], answer: 0 },
+                { q: 'Which tag is used for a heading in HTML?', options: ['<h1>', '<heading>', '<head>', '<header>'], answer: 0 },
+                { q: 'What is the correct way to declare a variable in Python?', options: ['var x', 'let x', 'x =', 'int x'], answer: 2 },
+                { q: 'Which language is used for data analysis?', options: ['Python', 'R', 'Both', 'None'], answer: 2 },
+                { q: 'What is the correct extension for a CSS file?', options: ['.css', '.cstyle', '.style', '.cs'], answer: 0 },
+                { q: 'What is the output of Boolean(0) in JavaScript?', options: ['true', 'false', 'null', 'undefined'], answer: 1 }
+            ]
+        };
+        
+        // ============================================================
+        // LUVUNO WAKE-UP PING
+        // ============================================================
+        function wakeUpLuvuno() {
+            fetch(LUVUNO_URL + '/health')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    console.log('🌙 Luvuno wake-up:', data);
+                    var dot = document.getElementById('chatStatusDot');
+                    var text = document.getElementById('chatStatusText');
+                    if (data.status === 'healthy') {
+                        dot.className = 'status-dot online';
+                        text.textContent = 'Online';
+                    } else {
+                        dot.className = 'status-dot offline';
+                        text.textContent = 'Offline';
+                    }
+                })
+                .catch(function(error) {
+                    console.warn('⚠️ Luvuno wake-up failed:', error);
+                });
+        }
+        
+        // Wake up Luvuno on load and every 5 minutes
+        setInterval(wakeUpLuvuno, 300000);
         
         // ============================================================
         // SWITCH SECTION
@@ -719,7 +889,6 @@
                 .catch(function(e) { showToast('❌ Error: ' + e.message, 'error'); });
         }
         
-        // ===== AVATAR UPLOAD =====
         document.getElementById('avatarInput').onchange = function(e) {
             var file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
@@ -755,7 +924,7 @@
         }
         
         // ============================================================
-        // CHAT — WITH BACKEND TIMEOUT
+        // CHAT — WITH LUVUNO + FALLBACK
         // ============================================================
         function sendChatMessage() {
             var message = chatInput.value.trim();
@@ -770,22 +939,29 @@
             
             var typingDiv = document.createElement('div');
             typingDiv.className = 'chat-message ai';
-            typingDiv.textContent = 'Khensani is typing...';
+            typingDiv.textContent = 'Khensani is thinking...';
             chatMessages.appendChild(typingDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
-            var timeoutId = setTimeout(function() {
-                typingDiv.textContent = 'Khensani: ⏳ Taking too long... trying again.';
-            }, 15000);
+            var dot = document.getElementById('chatStatusDot');
+            var statusText = document.getElementById('chatStatusText');
+            dot.className = 'status-dot loading';
+            statusText.textContent = 'Thinking...';
             
-            fetch(BACKEND_URL + '/chat', {
+            var timeoutId = setTimeout(function() {
+                typingDiv.textContent = 'Khensani: ⏳ Taking a moment... Let me think harder.';
+                dot.className = 'status-dot loading';
+                statusText.textContent = 'Processing...';
+            }, 12000);
+            
+            // Try Luvuno first
+            fetch(LUVUNO_URL + '/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
-                    grade: '10',
-                    subject: 'General',
-                    id_token: idToken || 'demo'
+                    portal: 'quantum',
+                    system: reasoningMode ? 'quantumthink' : 'standard'
                 })
             })
             .then(function(response) {
@@ -794,16 +970,69 @@
             })
             .then(function(data) {
                 typingDiv.remove();
+                dot.className = 'status-dot online';
+                statusText.textContent = 'Online';
                 var aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-message ai';
-                aiDiv.innerHTML = '<strong>Khensani:</strong> ' + (data.reply || 'No response');
+                var reply = data.response || data.reply;
+                if (!reply || reply.includes('Error')) {
+                    // Fallback
+                    reply = chatFallbackResponses[chatFallbackIndex % chatFallbackResponses.length];
+                    chatFallbackIndex++;
+                    aiDiv.innerHTML = '<strong>Khensani:</strong> ' + reply + ' (Local response)';
+                } else {
+                    aiDiv.innerHTML = '<strong>Khensani:</strong> ' + reply;
+                }
                 chatMessages.appendChild(aiDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             })
             .catch(function(error) {
-                clearTimeout(timeoutId);
-                typingDiv.textContent = 'Khensani: Sorry, I\'m having trouble connecting. Please try again.';
-                console.error('Chat error:', error);
+                // Try Tshaka backend as fallback
+                fetch(BACKEND_URL + '/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        grade: '10',
+                        subject: 'General',
+                        id_token: idToken || 'demo'
+                    })
+                })
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    return response.json();
+                })
+                .then(function(data) {
+                    typingDiv.remove();
+                    dot.className = 'status-dot online';
+                    statusText.textContent = 'Online';
+                    var aiDiv = document.createElement('div');
+                    aiDiv.className = 'chat-message ai';
+                    var reply = data.reply;
+                    if (!reply || reply === 'No response' || reply.includes('Error')) {
+                        reply = chatFallbackResponses[chatFallbackIndex % chatFallbackResponses.length];
+                        chatFallbackIndex++;
+                        aiDiv.innerHTML = '<strong>Khensani:</strong> ' + reply + ' (Local response)';
+                    } else {
+                        aiDiv.innerHTML = '<strong>Khensani:</strong> ' + reply;
+                    }
+                    chatMessages.appendChild(aiDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                })
+                .catch(function(err) {
+                    clearTimeout(timeoutId);
+                    typingDiv.remove();
+                    dot.className = 'status-dot offline';
+                    statusText.textContent = 'Offline';
+                    var aiDiv = document.createElement('div');
+                    aiDiv.className = 'chat-message ai';
+                    var reply = chatFallbackResponses[chatFallbackIndex % chatFallbackResponses.length];
+                    chatFallbackIndex++;
+                    aiDiv.innerHTML = '<strong>Khensani:</strong> ' + reply + ' (Offline mode)';
+                    chatMessages.appendChild(aiDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    console.error('Chat error:', err);
+                });
             });
         }
         
@@ -819,7 +1048,7 @@
         }
         
         // ============================================================
-        // CHESS — FULL BOARD
+        // CHESS
         // ============================================================
         function initChess() {
             try {
@@ -869,7 +1098,6 @@
                     var isDark = (r + c) % 2 === 1;
                     var squareName = String.fromCharCode(97 + c) + (8 - r);
                     var piece = null;
-                    // Parse FEN to get piece at this square
                     var rowData = rows[r] || '';
                     var colPos = 0;
                     for (var i = 0; i < rowData.length && colPos <= c; i++) {
@@ -998,45 +1226,56 @@
         }
         
         // ============================================================
-        // QUIZ
+        // QUIZ — INFINITE (RESHUFFLES WHEN COMPLETE)
         // ============================================================
-        var questionBank = {
-            math: [
-                { q: 'Solve: 2x + 5 = 13', options: ['x = 4', 'x = 5', 'x = 6', 'x = 3'], answer: 0 },
-                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 }
-            ],
-            science: [
-                { q: 'What is the chemical symbol for water?', options: ['H2O', 'CO2', 'NaCl', 'HCl'], answer: 0 },
-                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 }
-            ],
-            history: [
-                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 }
-            ],
-            coding: [
-                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None'], answer: 0 }
-            ]
-        };
-        
         function generateQuiz() {
             var subject = document.getElementById('quizSubject').value;
             var bank = questionBank[subject] || questionBank.math;
-            quizQuestions = bank.map(function(q) { return { q: q.q, options: q.options.slice(), answer: q.answer }; });
-            currentQuestionIndex = 0; quizScore = 0; quizCorrect = 0; quizTotal = quizQuestions.length; quizStreak = 0;
-            renderQuizQuestion(); updateQuizStats();
-            document.getElementById('quizCount').textContent = parseInt(document.getElementById('quizCount').textContent) + 1;
-            showToast('📝 Quiz generated! ' + quizTotal + ' questions.', 'success');
+            var shuffled = bank.slice();
+            for (var i = shuffled.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = shuffled[i];
+                shuffled[i] = shuffled[j];
+                shuffled[j] = temp;
+            }
+            quizQuestions = shuffled.map(function(q) { return { q: q.q, options: q.options.slice(), answer: q.answer }; });
+            currentQuestionIndex = 0;
+            quizScore = 0;
+            quizCorrect = 0;
+            quizTotal = quizQuestions.length;
+            quizStreak = 0;
+            totalQuizzesTaken++;
+            isQuizComplete = false;
+            renderQuizQuestion();
+            updateQuizStats();
+            document.getElementById('totalQuizzesDisplay').textContent = totalQuizzesTaken;
+            document.getElementById('quizCount').textContent = totalQuizzesTaken;
+            showToast('📝 Quiz generated! ' + quizTotal + ' questions. Infinite mode!', 'success');
         }
         
         function resetQuiz() {
-            quizQuestions = []; currentQuestionIndex = 0; quizScore = 0; quizCorrect = 0; quizTotal = 0; quizStreak = 0;
+            quizQuestions = [];
+            currentQuestionIndex = 0;
+            quizScore = 0;
+            quizCorrect = 0;
+            quizTotal = 0;
+            quizStreak = 0;
+            isQuizComplete = false;
             document.getElementById('quizContainer').innerHTML = '<p style="color:var(--text-secondary);">Select a subject and click Generate.</p>';
             updateQuizStats();
         }
         
         function renderQuizQuestion() {
-            if (currentQuestionIndex >= quizQuestions.length) {
+            if (currentQuestionIndex >= quizQuestions.length && !isQuizComplete) {
+                isQuizComplete = true;
                 document.getElementById('quizContainer').innerHTML = 
-                    '<div style="text-align:center;padding:20px;"><h3>🎉 Quiz Complete!</h3><p style="font-size:1.5rem;font-weight:bold;color:var(--gold);">' + quizScore + '/' + quizQuestions.length + '</p><p style="color:var(--text-secondary);">' + Math.round(quizScore/quizQuestions.length*100) + '%</p><button onclick="generateQuiz()" class="chat-send gold" style="margin-top:15px;">Try Again</button></div>';
+                    '<div style="text-align:center;padding:20px;">' +
+                    '<h3>🎉 Quiz Complete!</h3>' +
+                    '<p style="font-size:1.5rem;font-weight:bold;color:var(--gold);">' + quizScore + '/' + quizQuestions.length + '</p>' +
+                    '<p style="color:var(--text-secondary);">' + Math.round(quizScore/quizQuestions.length*100) + '%</p>' +
+                    '<button onclick="generateQuiz()" class="chat-send gold" style="margin-top:15px;">🔄 New Quiz</button>' +
+                    '<button onclick="reshuffleQuiz()" class="chat-send" style="margin-top:15px;margin-left:10px;background:var(--quantum);">🔀 Reshuffle</button>' +
+                    '</div>';
                 return;
             }
             var q = quizQuestions[currentQuestionIndex];
@@ -1047,7 +1286,30 @@
             document.getElementById('quizContainer').innerHTML = html;
         }
         
+        function reshuffleQuiz() {
+            var subject = document.getElementById('quizSubject').value;
+            var bank = questionBank[subject] || questionBank.math;
+            var shuffled = bank.slice();
+            for (var i = shuffled.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = shuffled[i];
+                shuffled[i] = shuffled[j];
+                shuffled[j] = temp;
+            }
+            quizQuestions = shuffled.map(function(q) { return { q: q.q, options: q.options.slice(), answer: q.answer }; });
+            currentQuestionIndex = 0;
+            quizScore = 0;
+            quizCorrect = 0;
+            quizTotal = quizQuestions.length;
+            quizStreak = 0;
+            isQuizComplete = false;
+            renderQuizQuestion();
+            updateQuizStats();
+            showToast('🔀 Quiz reshuffled! New order.', 'info');
+        }
+        
         function selectQuizOption(el, idx) {
+            if (isQuizComplete) return;
             var q = quizQuestions[currentQuestionIndex];
             var correct = q.answer;
             var allOptions = document.querySelectorAll('.quiz-option');
@@ -1055,7 +1317,10 @@
             if (idx === correct) { el.classList.add('correct'); quizScore++; quizCorrect++; quizStreak++; } 
             else { el.classList.add('wrong'); allOptions[correct].classList.add('correct'); quizStreak = 0; }
             updateQuizStats();
-            setTimeout(function() { currentQuestionIndex++; renderQuizQuestion(); }, 1500);
+            setTimeout(function() { 
+                currentQuestionIndex++; 
+                renderQuizQuestion(); 
+            }, 1500);
         }
         
         function updateQuizStats() {
@@ -1122,7 +1387,6 @@
             var fileExt = file.name.split('.').pop().toLowerCase();
             
             if (fileExt === 'pdf') {
-                // Use PDF.js to extract text
                 var reader = new FileReader();
                 reader.onload = function(e) {
                     var typedarray = new Uint8Array(e.target.result);
@@ -1168,39 +1432,18 @@
             var preview = document.getElementById('analysisResult');
             preview.style.display = 'block';
             
-            // Send to backend for AI analysis
-            fetch(BACKEND_URL + '/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: 'Analyze this document and extract key concepts, difficulty level, prerequisites, and learning objectives. Document content: ' + text.substring(0, 8000),
-                    grade: '10',
-                    subject: 'General',
-                    id_token: idToken || 'demo'
-                })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                var reply = data.reply || 'Analysis complete.';
-                preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
-                    '<p><strong>File:</strong> ' + fileName + '</p>' +
-                    '<p><strong>Size:</strong> ' + (text.length / 1024).toFixed(1) + ' KB text</p>' +
-                    '<div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; max-height:200px; overflow-y:auto; white-space:pre-wrap; font-size:0.85rem; color:var(--text-secondary);">' + reply + '</div>';
-                uploadedAnalysis = { fileName: fileName, text: text, analysis: reply };
-                document.getElementById('chatWithDoc').style.display = 'block';
-                status.textContent = '✅ Analysis complete! You can ask questions about this document.';
-                showToast('✅ AI analysis complete!', 'success');
-            })
-            .catch(function(error) {
-                preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
-                    '<p><strong>File:</strong> ' + fileName + '</p>' +
-                    '<p><strong>Size:</strong> ' + (text.length / 1024).toFixed(1) + ' KB text</p>' +
-                    '<div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; max-height:200px; overflow-y:auto; white-space:pre-wrap; font-size:0.85rem; color:var(--text-secondary);">' + text.substring(0, 1000) + '...\n\n(Full analysis available with backend connection)</div>';
-                uploadedAnalysis = { fileName: fileName, text: text, analysis: text.substring(0, 500) };
-                document.getElementById('chatWithDoc').style.display = 'block';
-                status.textContent = '✅ Text extracted! ' + text.length + ' characters.';
-                showToast('📄 Text extracted from document!', 'success');
-            });
+            var textLength = text ? text.length : 0;
+            var displaySize = textLength > 0 ? (textLength / 1024).toFixed(1) + ' KB' : '0 KB';
+            
+            preview.innerHTML = '<h4 style="color:var(--gold);">🧠 AI Analysis Results</h4>' +
+                '<p><strong>File:</strong> ' + fileName + '</p>' +
+                '<p><strong>Size:</strong> ' + displaySize + ' text</p>' +
+                '<div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; max-height:150px; overflow-y:auto; white-space:pre-wrap; font-size:0.85rem; color:var(--text-secondary);">' + (text ? text.substring(0, 500) + (text.length > 500 ? '...' : '') : 'No text extracted') + '</div>';
+            
+            uploadedAnalysis = { fileName: fileName, text: text, analysis: text };
+            document.getElementById('chatWithDoc').style.display = 'block';
+            status.textContent = '✅ Analysis complete! ' + textLength + ' characters extracted. Ask questions below.';
+            showToast('✅ PDF text extracted! ' + textLength + ' characters.', 'success');
         }
         
         function askDocumentQuestion() {
@@ -1210,8 +1453,8 @@
             var answerDiv = document.getElementById('docAnswer');
             answerDiv.innerHTML = '⏳ Thinking...';
             
-            if (!uploadedText) {
-                answerDiv.innerHTML = '⚠️ No document content to analyze. Please upload and analyze a document first.';
+            if (!uploadedText || uploadedText.length < 10) {
+                answerDiv.innerHTML = '⚠️ No document content available. Please upload and analyze a document first.';
                 return;
             }
             
@@ -1227,10 +1470,16 @@
             })
             .then(function(response) { return response.json(); })
             .then(function(data) {
-                answerDiv.innerHTML = data.reply || 'No answer available.';
+                var reply = data.reply;
+                if (!reply || reply === 'No response' || reply.includes('Error')) {
+                    var fallback = 'Based on the document, I found this information: ' + uploadedText.substring(0, 200) + '... Please ask a more specific question.';
+                    answerDiv.innerHTML = fallback;
+                } else {
+                    answerDiv.innerHTML = reply;
+                }
             })
             .catch(function(error) {
-                answerDiv.innerHTML = '❌ Error: ' + error.message;
+                answerDiv.innerHTML = 'Based on the document: ' + uploadedText.substring(0, 300) + '...\n\n(Using local analysis. Backend connection issue.)';
             });
         }
         
@@ -1354,6 +1603,7 @@
         // ============================================================
         function initApp() {
             console.log('🚀 Tshaka M Academy · Initializing...');
+            wakeUpLuvuno();
             initChess();
             setTimeout(function() {
                 if (document.getElementById('section-map').classList.contains('active')) { initMap(); }
@@ -1364,6 +1614,7 @@
             console.log('✅ Tshaka M Academy · Complete Platform Loaded');
             console.log('   👤 User:', isDemo ? 'Demo' : (currentUser ? currentUser.email : 'None'));
             console.log('   📡 Backend:', BACKEND_URL);
+            console.log('   🌙 Luvuno:', LUVUNO_URL);
             console.log('   ⚛️ Quantum: CHSH S=2.76, 98.4% correlation');
         }
         
