@@ -58,16 +58,20 @@
         
         /* ===== LOGIN ===== */
         .login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(5,8,15,0.98);
             backdrop-filter: blur(20px);
             z-index: 2000;
-            display: flex;
+            display: flex !important;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        .login-overlay.hidden { display: none; }
+        .login-overlay.hidden { display: none !important; }
         
         .login-card {
             max-width: 480px;
@@ -122,7 +126,7 @@
         }
         .btn-demo:hover { box-shadow: 0 8px 25px var(--quantum-glow); }
         
-        /* ===== HEADER & REST ===== */
+        /* ===== HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 50px; filter: drop-shadow(0 0 15px var(--primary)); }
@@ -449,8 +453,7 @@
 
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — EMERGENCY FIX
-        // Google and Demo buttons ALWAYS work
+        // NUCLEAR FIX — DIRECT BUTTON CONTROLS
         // ============================================================
         
         // ===== BACKEND URL =====
@@ -507,10 +510,10 @@
         let fallActive = true;
         
         // ============================================================
-        // ENTER DEMO — ALWAYS WORKS
+        // ENTER DEMO — DIRECT, NO INTERFERENCE
         // ============================================================
         function enterDemo() {
-            console.log('🚀 Demo button clicked!');
+            console.log('🚀 DEMO BUTTON CLICKED');
             isDemo = true;
             currentUser = { uid: 'demo', email: 'demo@tshaka.academy' };
             userEmailDisplay.textContent = 'Demo User';
@@ -521,10 +524,10 @@
         }
         
         // ============================================================
-        // GOOGLE LOGIN — ALWAYS WORKS
+        // GOOGLE LOGIN — DIRECT, NO INTERFERENCE
         // ============================================================
         function loginWithGoogle() {
-            console.log('🔑 Google login clicked!');
+            console.log('🔑 GOOGLE BUTTON CLICKED');
             loginError.textContent = '⏳ Signing in with Google...';
             auth.signInWithPopup(provider)
                 .then((result) => {
@@ -542,13 +545,7 @@
                 })
                 .catch((error) => {
                     console.error('Google Sign-In error:', error);
-                    if (error.code === 'auth/popup-closed-by-user') {
-                        loginError.textContent = '⚠️ Popup was closed. Please try again.';
-                    } else if (error.code === 'auth/network-request-failed') {
-                        loginError.textContent = '⚠️ Network error. Check your internet connection.';
-                    } else {
-                        loginError.textContent = '❌ Login failed: ' + error.message;
-                    }
+                    loginError.textContent = '❌ ' + error.message;
                 });
         }
         
@@ -565,7 +562,7 @@
         }
         
         // ============================================================
-        // AUTH LISTENER
+        // AUTH LISTENER — SILENT, DOESN'T OVERRIDE BUTTONS
         // ============================================================
         auth.onAuthStateChanged((user) => {
             if (user && !isDemo) {
@@ -583,19 +580,22 @@
         });
         
         // ============================================================
-        // EVENT LISTENERS (DIRECT, NO INTERFERENCE)
+        // EVENT LISTENERS — ONCLICK DIRECT, NO PREVENTDEFAULT
         // ============================================================
-        demoLoginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
+        demoLoginBtn.onclick = function() {
             enterDemo();
-        });
+            return false;
+        };
         
-        googleLoginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
+        googleLoginBtn.onclick = function() {
             loginWithGoogle();
-        });
+            return false;
+        };
         
-        logoutMainBtn.addEventListener('click', logout);
+        logoutMainBtn.onclick = function() {
+            logout();
+            return false;
+        };
         
         // ============================================================
         // PROFILE LOAD
@@ -660,18 +660,18 @@
             container.scrollTop = container.scrollHeight;
         }
         
-        document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
+        document.getElementById('chatSendBtn').onclick = sendChatMessage;
         document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
         
-        document.getElementById('chatSpeedSlider').addEventListener('input', () => {
-            chatSpeed = parseInt(document.getElementById('chatSpeedSlider').value);
+        document.getElementById('chatSpeedSlider').oninput = function() {
+            chatSpeed = parseInt(this.value);
             document.getElementById('chatSpeedDisplay').textContent = chatSpeed + ' cps';
-        });
+        };
         
-        document.getElementById('reasoningToggleBtn').addEventListener('click', () => {
+        document.getElementById('reasoningToggleBtn').onclick = function() {
             reasoningMode = !reasoningMode;
-            document.getElementById('reasoningToggleBtn').textContent = reasoningMode ? 'ON' : 'OFF';
-        });
+            this.textContent = reasoningMode ? 'ON' : 'OFF';
+        };
         
         // ============================================================
         // CHESS
@@ -793,26 +793,26 @@
             }
         });
         
-        document.getElementById('chessNewBtn').addEventListener('click', () => {
+        document.getElementById('chessNewBtn').onclick = function() {
             chess = new Chess();
             gameHistory = [];
             chessGamesPlayed++;
             renderChessBoard();
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
-        });
+        };
         
-        document.getElementById('chessUndoBtn').addEventListener('click', () => {
+        document.getElementById('chessUndoBtn').onclick = function() {
             if (gameHistory.length === 0) return;
             chess.undo();
             gameHistory.pop();
             if (chess.turn() === 'b') { chess.undo(); gameHistory.pop(); }
             renderChessBoard();
-        });
+        };
         
-        document.getElementById('chessHintBtn').addEventListener('click', () => {
+        document.getElementById('chessHintBtn').onclick = function() {
             const moves = chess.moves({ verbose: true });
             if (moves.length > 0) alert('Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to);
-        });
+        };
         
         // ============================================================
         // QUIZ
@@ -838,7 +838,7 @@
             ]
         };
         
-        document.getElementById('quizGenerateBtn').addEventListener('click', () => {
+        document.getElementById('quizGenerateBtn').onclick = function() {
             const subject = document.getElementById('quizSubject').value;
             const bank = questionBank[subject] || questionBank.math;
             quizQuestions = bank.map(q => ({ ...q }));
@@ -850,9 +850,9 @@
             renderQuizQuestion();
             updateQuizStats();
             document.getElementById('quizCount').textContent = parseInt(document.getElementById('quizCount').textContent) + 1;
-        });
+        };
         
-        document.getElementById('quizResetBtn').addEventListener('click', () => {
+        document.getElementById('quizResetBtn').onclick = function() {
             quizQuestions = [];
             currentQuestionIndex = 0;
             quizScore = 0;
@@ -861,7 +861,7 @@
             quizStreak = 0;
             document.getElementById('quizContainer').innerHTML = '<p style="color:var(--text-secondary);">Select a subject and click Generate.</p>';
             updateQuizStats();
-        });
+        };
         
         function renderQuizQuestion() {
             if (currentQuestionIndex >= quizQuestions.length) {
@@ -932,9 +932,9 @@
             }).addTo(map).bindPopup('📍 Child Location');
         }
         
-        document.getElementById('mapRefreshBtn').addEventListener('click', () => {
+        document.getElementById('mapRefreshBtn').onclick = function() {
             if (map) map.setView([-26.1375 + (Math.random()-0.5)*0.01, 28.4140 + (Math.random()-0.5)*0.01], 14);
-        });
+        };
         
         // ============================================================
         // WHATSAPP
@@ -985,7 +985,7 @@
         // ============================================================
         // SETTINGS SAVE
         // ============================================================
-        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+        document.getElementById('saveProfileBtn').onclick = async function() {
             const uid = isDemo ? 'demo' : (currentUser ? currentUser.uid : 'demo');
             const name = document.getElementById('profileName').value;
             const phone = document.getElementById('profilePhone').value;
@@ -993,20 +993,20 @@
                 await db.collection('users').doc(uid).set({ name, phone, updatedAt: new Date() }, { merge: true });
                 alert('✅ Settings saved!');
             } catch(e) { alert('Error saving: ' + e.message); }
-        });
+        };
         
         // ============================================================
         // NAVIGATION
         // ============================================================
         document.querySelectorAll('.menu-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.onclick = function() {
                 document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+                this.classList.add('active');
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById(`section-${btn.dataset.section}`).classList.add('active');
-                if (btn.dataset.section === 'map') setTimeout(initMap, 300);
-                if (btn.dataset.section === 'chess') renderChessBoard();
-            });
+                document.getElementById(`section-${this.dataset.section}`).classList.add('active');
+                if (this.dataset.section === 'map') setTimeout(initMap, 300);
+                if (this.dataset.section === 'chess') renderChessBoard();
+            };
         });
         
         // ============================================================
@@ -1042,15 +1042,9 @@
         // ============================================================
         // START
         // ============================================================
-        console.log('✅ Ready. Click Demo to enter immediately.');
-        console.log('✅ Google Sign-In button is always visible.');
-        
-        // Force show buttons if Firebase is slow
-        setTimeout(() => {
-            if (loginOverlay && !loginOverlay.classList.contains('hidden')) {
-                console.log('⏳ Still on login screen – buttons are ready.');
-            }
-        }, 2000);
+        console.log('✅ NUCLEAR FIX DEPLOYED');
+        console.log('✅ Both buttons use direct onclick – NO INTERFERENCE');
+        console.log('✅ Click Demo or Google – both will work immediately.');
     </script>
 </body>
 </html>
