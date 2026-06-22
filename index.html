@@ -7,16 +7,19 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Firebase & Google SDK (loaded early) -->
+    <!-- Firebase & Google SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
     
     <style>
+        /* ===== RESET & VARIABLES ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
@@ -24,7 +27,7 @@
             --primary-dark: #0096C7;
             --secondary: #00F5D4;
             --quantum: #8A2BE2;
-            --quantum-glow: rgba(138,43,226,0.3);
+            --quantum-glow: rgba(138,43,226,0.4);
             --success: #00FF88;
             --warning: #FFD166;
             --danger: #EF476F;
@@ -41,8 +44,8 @@
         #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
         
-        /* GLASSMORPHISM */
-        .glass-card, .stat-card, .login-card {
+        /* ===== GLASSMORPHISM ===== */
+        .glass-card, .stat-card, .login-card, .chess-board-container {
             background: rgba(15, 25, 45, 0.45);
             backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
@@ -51,6 +54,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
         .glass-card:hover, .stat-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+        .glass-card.quantum-glow { border-color: var(--quantum); box-shadow: 0 0 30px var(--quantum-glow); }
         
         @keyframes glassPulse {
             0% { border-color: rgba(0,180,216,0.3); box-shadow: 0 0 0 0 rgba(0,180,216,0.1); }
@@ -58,71 +62,109 @@
             100% { border-color: rgba(0,180,216,0.3); box-shadow: 0 0 0 0 rgba(0,180,216,0.1); }
         }
         
-        /* LOGIN */
+        /* ===== LOGIN OVERLAY ===== */
         .login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5,8,15,0.98); backdrop-filter: blur(20px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
-            padding: 20px;
-        }
-        .login-card {
-            max-width: 480px; width: 100%; padding: 40px 32px;
-            text-align: center; animation: glassPulse 4s ease-in-out infinite;
-        }
-        .login-logo {
-            max-width: 340px; width: 100%; margin-bottom: 20px;
-            filter: drop-shadow(0 0 30px var(--primary));
-            display: block; margin-left: auto; margin-right: auto;
-        }
-        .login-title { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
-        .login-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 25px; font-family: var(--font-mono); letter-spacing: 2px; }
-        
-        .google-btn {
-            background: #1a1a2e;
-            color: white;
-            padding: 14px 24px;
-            border-radius: 60px;
-            border: 1px solid #444;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
+            background: rgba(5,8,15,0.98);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            transition: all 0.3s;
+            padding: 20px;
         }
-        .google-btn:hover { background: #2a2a4e; border-color: var(--primary); transform: translateY(-2px); }
+        .login-overlay.hidden { display: none; }
+        
+        .login-card {
+            max-width: 480px;
+            width: 100%;
+            padding: 40px 32px;
+            text-align: center;
+            animation: glassPulse 4s ease-in-out infinite;
+        }
+        .login-logo {
+            max-width: 300px;
+            width: 100%;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 30px var(--primary));
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .login-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
+        .login-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 25px; font-family: var(--font-mono); letter-spacing: 2px; }
+        
         .auth-separator { display: flex; align-items: center; gap: 15px; margin: 16px 0; color: var(--text-secondary); font-size: 0.65rem; }
         .auth-separator::before, .auth-separator::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
-        .demo-btn { background: linear-gradient(135deg, var(--quantum), var(--primary)); border: none; padding: 14px; border-radius: 60px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; transition: all 0.2s; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .login-error { color: var(--danger); font-size: 0.8rem; margin-top: 10px; min-height: 20px; }
+        
+        .demo-btn {
+            background: linear-gradient(135deg, var(--quantum), var(--primary));
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            color: white;
+            transition: all 0.2s;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
         .demo-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--quantum-glow); }
         
-        /* HEADER */
+        /* ===== CUSTOM GOOGLE SIGN-IN BUTTON ===== */
+        .g_id_signin {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        #googleSignInContainer .g_id_signin {
+            width: 100% !important;
+        }
+        #googleSignInContainer .g_id_signin > div {
+            width: 100% !important;
+        }
+        #googleSignInContainer iframe {
+            width: 100% !important;
+            min-width: 280px !important;
+            height: 48px !important;
+            border-radius: 60px !important;
+            box-shadow: 0 4px 15px rgba(0,180,216,0.15) !important;
+        }
+        #googleSignInContainer iframe:hover {
+            box-shadow: 0 8px 25px rgba(0,180,216,0.25) !important;
+            transform: translateY(-2px);
+        }
+        
+        /* ===== HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
-        .header-logo { height: 55px; filter: drop-shadow(0 0 15px var(--primary)); }
-        .brand-text h1 { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .brand-text p { font-size: 0.65rem; color: var(--text-secondary); letter-spacing: 2px; font-family: var(--font-mono); }
+        .header-logo { height: 50px; filter: drop-shadow(0 0 15px var(--primary)); }
+        .brand-text h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .brand-text p { font-size: 0.6rem; color: var(--text-secondary); letter-spacing: 2px; font-family: var(--font-mono); }
         .user-area { display: flex; align-items: center; gap: 15px; background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); padding: 6px 16px; border-radius: 60px; border: 1px solid var(--glass-border); }
         .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--quantum)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
         .user-email { font-size: 0.7rem; font-family: var(--font-mono); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .logout-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
         .logout-btn:hover { color: var(--danger); }
         
-        /* STATS */
+        /* ===== STATS ===== */
         .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 25px; }
         .stat-card { padding: 18px; text-align: center; border-radius: 20px; }
         .stat-value { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--secondary), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .stat-label { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; font-family: var(--font-mono); }
         
-        /* MENU */
+        /* ===== MENU ===== */
         .top-menu { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; }
         .menu-btn { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 40px; padding: 10px 18px; color: white; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
         .menu-btn:hover, .menu-btn.active { background: rgba(0,180,216,0.3); border-color: var(--primary); color: var(--secondary); transform: translateY(-2px); }
         
-        /* SECTIONS */
+        /* ===== SECTIONS ===== */
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -131,8 +173,8 @@
         .card-header i { font-size: 1.4rem; color: var(--primary); }
         .card-header h3 { font-size: 1.1rem; font-weight: 600; }
         
-        /* CHAT */
-        .chat-messages { height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
+        /* ===== CHAT ===== */
+        .chat-messages { height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
         .chat-message { padding: 10px 14px; margin-bottom: 10px; border-radius: 18px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; }
         .chat-message.user { background: var(--primary); margin-left: auto; text-align: right; }
         .chat-message.ai { background: rgba(255,255,255,0.08); border-left: 2px solid var(--secondary); }
@@ -142,81 +184,96 @@
         .chat-speed { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
         .chat-speed input { width: 80px; cursor: pointer; }
         
-        /* QUIZ */
+        /* ===== QUIZ ===== */
         .quiz-option { display: block; width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; color: white; cursor: pointer; margin-bottom: 8px; text-align: left; transition: 0.2s; }
         .quiz-option:hover { background: rgba(0,180,216,0.2); border-color: var(--primary); }
         .quiz-option.correct { background: var(--success); color: #000; }
         .quiz-option.wrong { background: var(--danger); }
         
-        /* MAP */
+        /* ===== MAP ===== */
         .map-container { height: 300px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); }
         #childMap { height: 100%; width: 100%; background: #0a0f1a; }
         
-        /* WHATSAPP */
+        /* ===== WHATSAPP ===== */
         .whatsapp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .whatsapp-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 16px; text-align: center; border: 1px solid var(--glass-border); transition: 0.2s; }
-        .whatsapp-card:hover { border-color: #25D366; }
+        .whatsapp-card:hover { border-color: #25D366; transform: translateY(-2px); }
         .btn-whatsapp { background: #25D366; border: none; padding: 10px 20px; border-radius: 30px; color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 8px; }
         .btn-whatsapp:hover { transform: scale(1.02); filter: brightness(1.05); }
         
-        /* CHESS */
+        /* ===== CHESS ===== */
         .chess-board-wrapper { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         #chessBoard { width: 100%; max-width: 450px; aspect-ratio: 1/1; }
         .chess-sidebar { flex: 1; min-width: 200px; }
+        .chess-sidebar .stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; }
         .chess-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
         .btn-chess { background: rgba(0,180,216,0.2); border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 30px; color: white; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
         .btn-chess:hover { background: rgba(0,180,216,0.4); border-color: var(--primary); }
         .btn-chess.primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; }
         .move-history { max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; margin-top: 10px; }
-        .stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; }
         
-        /* SETTINGS */
-        .toggle-group { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-top: 10px; }
-        .toggle-switch { position: relative; width: 50px; height: 28px; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; }
+        /* ===== SETTINGS ===== */
+        .toggle-group { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-top: 10px; flex-wrap: wrap; }
+        .toggle-switch { position: relative; width: 50px; height: 28px; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
         .toggle-switch.active { background: var(--primary); }
         .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: 0.3s; }
         .toggle-switch.active::after { left: 25px; }
-        .fall-alert { background: rgba(239,71,111,0.2); border: 1px solid var(--danger); border-radius: 16px; padding: 16px; text-align: center; margin-top: 10px; }
+        .fall-alert { background: rgba(239,71,111,0.2); border: 1px solid var(--danger); border-radius: 16px; padding: 16px; text-align: center; margin-top: 10px; display: none; }
         
-        /* FOOTER */
+        /* ===== FOOTER ===== */
         .footer { text-align: center; padding: 25px 20px 20px; margin-top: 30px; border-top: 1px solid var(--glass-border); }
         .footer .copyright { font-size: 0.6rem; color: var(--text-secondary); }
         .footer-logo-row { display: flex; justify-content: center; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
         .footer-logo { height: 30px; opacity: 0.6; transition: 0.3s; }
         .footer-logo:hover { opacity: 1; }
         
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .header { flex-direction: column; text-align: center; }
             .user-area { justify-content: center; }
-            .login-logo { max-width: 260px; }
-            .login-title { font-size: 1.8rem; }
+            .chess-board-wrapper { flex-direction: column; align-items: center; }
+            .login-logo { max-width: 220px; }
+            .login-title { font-size: 1.6rem; }
+            .top-menu { gap: 4px; }
+            .menu-btn { padding: 8px 12px; font-size: 10px; }
         }
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .glass-card { padding: 16px; }
+            .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 12px; }
+            .stat-value { font-size: 1.3rem; }
+            #chessBoard { max-width: 100%; }
+        }
+        
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
     </style>
 </head>
 <body>
     <div id="particles-js"></div>
     
-    <!-- LOGIN -->
-    <div id="loginOverlay" class="login-overlay" style="display:flex;">
+    <!-- ===== LOGIN OVERLAY ===== -->
+    <div id="loginOverlay" class="login-overlay">
         <div class="login-card">
             <img src="https://i.postimg.cc/9XvJ6mQJ/logo-for-Tshaka-M-Academy-an-African-quant-0-removebg-preview.png" alt="Tshaka M Academy" class="login-logo" onerror="this.src='https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png'">
             <div class="login-title">Tshaka M Academy</div>
             <div class="login-subtitle">Home-Schooling · Powered by MindTech</div>
             
-            <div id="googleSignInContainer">
-                <button onclick="manualGoogleSignIn()" class="google-btn">
-                    <i class="fab fa-google" style="color:#EA4335;"></i> Sign in with Google
-                </button>
-            </div>
+            <!-- Google Sign-In Container -->
+            <div id="googleSignInContainer"></div>
             
             <div class="auth-separator">or</div>
             
             <button id="demoLoginBtn" class="demo-btn"><i class="fas fa-rocket"></i> Enter Demo</button>
+            <div id="loginError" class="login-error"></div>
         </div>
     </div>
     
-    <!-- MAIN APP -->
+    <!-- ===== MAIN APP ===== -->
     <div id="appContainer" class="container" style="display: none;">
         <!-- HEADER -->
         <div class="header">
@@ -246,13 +303,13 @@
         <div class="top-menu">
             <button class="menu-btn active" data-section="chat">💬 Chat</button>
             <button class="menu-btn" data-section="quiz">📝 Quiz</button>
+            <button class="menu-btn" data-section="chess">♟️ Chess</button>
             <button class="menu-btn" data-section="map">📍 Map</button>
             <button class="menu-btn" data-section="whatsapp">💬 WhatsApp</button>
-            <button class="menu-btn" data-section="chess">♟️ Chess</button>
             <button class="menu-btn" data-section="settings">⚙️ Settings</button>
         </div>
         
-        <!-- CHAT SECTION (HOME) -->
+        <!-- ===== CHAT SECTION ===== -->
         <div id="section-chat" class="section active">
             <div class="glass-card quantum-glow">
                 <div class="card-header"><i class="fas fa-comments"></i><h3>Khensani AI Chat</h3></div>
@@ -267,16 +324,16 @@
                     <span>Speed:</span>
                     <input type="range" id="chatSpeedSlider" min="10" max="100" value="35">
                     <span id="chatSpeedDisplay">35 cps</span>
-                    <span style="margin-left:auto;font-size:0.6rem;">Reasoning: <button id="reasoningToggleBtn" class="btn-chess" style="padding:2px 12px;">OFF</button></span>
+                    <span style="margin-left:auto; font-size:0.6rem;">Reasoning: <button id="reasoningToggleBtn" class="btn-chess" style="padding:2px 12px;">OFF</button></span>
                 </div>
             </div>
         </div>
         
-        <!-- QUIZ -->
+        <!-- ===== QUIZ SECTION ===== -->
         <div id="section-quiz" class="section">
             <div class="glass-card quantum-glow">
                 <div class="card-header"><i class="fas fa-brain"></i><h3>Khensani AI Quiz</h3></div>
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
                     <select id="quizSubject" style="background:rgba(0,0,0,0.5);border:1px solid var(--glass-border);border-radius:30px;padding:8px 16px;color:white;">
                         <option value="math">Math</option>
                         <option value="science">Science</option>
@@ -292,7 +349,7 @@
                     <button id="quizResetBtn" class="btn-chess"><i class="fas fa-undo"></i> Reset</button>
                 </div>
                 <div id="quizContainer"><p style="color:var(--text-secondary);">Select a subject and click Generate.</p></div>
-                <div style="display:flex;gap:20px;margin-top:15px;flex-wrap:wrap;font-size:0.8rem;">
+                <div style="display:flex; gap:20px; margin-top:15px; flex-wrap:wrap; font-size:0.8rem;">
                     <span>Score: <strong id="quizScoreDisplay">0</strong></span>
                     <span>Questions: <strong id="quizTotalDisplay">0</strong></span>
                     <span>Correct: <strong id="quizCorrectDisplay">0</strong></span>
@@ -301,49 +358,7 @@
             </div>
         </div>
         
-        <!-- MAP -->
-        <div id="section-map" class="section">
-            <div class="glass-card">
-                <div class="card-header"><i class="fas fa-map-marked-alt"></i><h3>Child Location Map</h3></div>
-                <div class="map-container"><div id="childMap"></div></div>
-                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-                    <button id="mapRefreshBtn" class="btn-chess primary"><i class="fas fa-sync-alt"></i> Refresh</button>
-                    <span style="font-size:0.7rem;color:var(--text-secondary);">📍 Safe zones: School, Home, Park</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- WHATSAPP -->
-        <div id="section-whatsapp" class="section">
-            <div class="glass-card">
-                <div class="card-header"><i class="fab fa-whatsapp"></i><h3>WhatsApp Communication</h3></div>
-                <div class="whatsapp-grid">
-                    <div class="whatsapp-card">
-                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
-                        <h4 style="margin-top:8px;">Parent ↔ Teacher</h4>
-                        <p style="font-size:0.7rem;color:var(--text-secondary);">Class updates, progress reports</p>
-                        <button class="btn-whatsapp" onclick="openWhatsApp('parent_teacher')">Open Group</button>
-                    </div>
-                    <div class="whatsapp-card">
-                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
-                        <h4 style="margin-top:8px;">Teacher ↔ Student</h4>
-                        <p style="font-size:0.7rem;color:var(--text-secondary);">Assignment help, questions</p>
-                        <button class="btn-whatsapp" onclick="openWhatsApp('teacher_student')">Open Group</button>
-                    </div>
-                    <div class="whatsapp-card">
-                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
-                        <h4 style="margin-top:8px;">Parent ↔ Parent</h4>
-                        <p style="font-size:0.7rem;color:var(--text-secondary);">Community support</p>
-                        <button class="btn-whatsapp" onclick="openWhatsApp('parent_parent')">Open Group</button>
-                    </div>
-                </div>
-                <div style="margin-top:15px;text-align:center;font-size:0.7rem;color:var(--text-secondary);">
-                    <i class="fas fa-phone"></i> Add phone numbers in profile for direct calls.
-                </div>
-            </div>
-        </div>
-        
-        <!-- CHESS -->
+        <!-- ===== CHESS SECTION ===== -->
         <div id="section-chess" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-chess-king"></i><h3>♟️ Chess Arena</h3></div>
@@ -372,30 +387,72 @@
             </div>
         </div>
         
-        <!-- SETTINGS -->
+        <!-- ===== MAP SECTION ===== -->
+        <div id="section-map" class="section">
+            <div class="glass-card">
+                <div class="card-header"><i class="fas fa-map-marked-alt"></i><h3>Child Location Map</h3></div>
+                <div class="map-container"><div id="childMap"></div></div>
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="mapRefreshBtn" class="btn-chess primary"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <span style="font-size:0.7rem; color:var(--text-secondary);">📍 Safe zones: School, Home, Park</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== WHATSAPP SECTION ===== -->
+        <div id="section-whatsapp" class="section">
+            <div class="glass-card">
+                <div class="card-header"><i class="fab fa-whatsapp"></i><h3>WhatsApp Communication</h3></div>
+                <div class="whatsapp-grid">
+                    <div class="whatsapp-card">
+                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
+                        <h4 style="margin-top:8px;">Parent ↔ Teacher</h4>
+                        <p style="font-size:0.7rem;color:var(--text-secondary);">Class updates, progress reports</p>
+                        <button class="btn-whatsapp" onclick="openWhatsApp('parent_teacher')">Open Group</button>
+                    </div>
+                    <div class="whatsapp-card">
+                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
+                        <h4 style="margin-top:8px;">Teacher ↔ Student</h4>
+                        <p style="font-size:0.7rem;color:var(--text-secondary);">Assignment help, questions</p>
+                        <button class="btn-whatsapp" onclick="openWhatsApp('teacher_student')">Open Group</button>
+                    </div>
+                    <div class="whatsapp-card">
+                        <i class="fab fa-whatsapp" style="font-size:2rem;color:#25D366;"></i>
+                        <h4 style="margin-top:8px;">Parent ↔ Parent</h4>
+                        <p style="font-size:0.7rem;color:var(--text-secondary);">Community support</p>
+                        <button class="btn-whatsapp" onclick="openWhatsApp('parent_parent')">Open Group</button>
+                    </div>
+                </div>
+                <div style="margin-top:15px; text-align:center; font-size:0.7rem; color:var(--text-secondary);">
+                    <i class="fas fa-phone"></i> Add phone numbers in profile for direct calls.
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== SETTINGS SECTION ===== -->
         <div id="section-settings" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-user-cog"></i><h3>Settings</h3></div>
                 
                 <div style="margin-bottom:20px;">
-                    <label style="display:block;font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px;">Display Name</label>
-                    <input type="text" id="profileName" style="width:100%;padding:12px;background:rgba(0,0,0,0.5);border:1px solid var(--glass-border);border-radius:30px;color:white;">
+                    <label style="display:block; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">Display Name</label>
+                    <input type="text" id="profileName" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); border-radius:30px; color:white;">
                 </div>
                 <div style="margin-bottom:20px;">
-                    <label style="display:block;font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px;">Phone Number (WhatsApp)</label>
-                    <input type="tel" id="profilePhone" style="width:100%;padding:12px;background:rgba(0,0,0,0.5);border:1px solid var(--glass-border);border-radius:30px;color:white;" placeholder="+27 73 399 7997">
+                    <label style="display:block; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">Phone Number (WhatsApp)</label>
+                    <input type="tel" id="profilePhone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); border-radius:30px; color:white;" placeholder="+27 73 399 7997">
                 </div>
                 
                 <div class="toggle-group">
                     <span style="font-size:0.8rem;"><i class="fas fa-user-secret"></i> Incognito Mode</span>
                     <div class="toggle-switch" id="incognitoToggle" onclick="toggleIncognito()"></div>
-                    <span style="font-size:0.6rem;color:var(--text-secondary);">No tracking during private study</span>
+                    <span style="font-size:0.6rem; color:var(--text-secondary);">No tracking during private study</span>
                 </div>
                 
                 <div class="toggle-group">
                     <span style="font-size:0.8rem;"><i class="fas fa-fall"></i> Fall Detection</span>
                     <div class="toggle-switch active" id="fallToggle" onclick="toggleFall()"></div>
-                    <span style="font-size:0.6rem;color:var(--text-secondary);">Sends WhatsApp alert on fall</span>
+                    <span style="font-size:0.6rem; color:var(--text-secondary);">Sends WhatsApp alert on fall</span>
                 </div>
                 
                 <div class="fall-alert" id="fallAlert" style="display:none;">
@@ -403,11 +460,11 @@
                     <span>🚨 Fall detected! Alert sent to emergency contacts.</span>
                 </div>
                 
-                <button id="saveProfileBtn" class="chat-send" style="width:100%;margin-top:15px;">Save Settings</button>
+                <button id="saveProfileBtn" class="chat-send" style="width:100%; margin-top:15px;">Save Settings</button>
             </div>
         </div>
         
-        <!-- FOOTER -->
+        <!-- ===== FOOTER ===== -->
         <div class="footer">
             <div class="copyright">© 2026 Tshaka M Academy · Powered by MindTech Industries</div>
             <div class="footer-logo-row">
@@ -417,22 +474,21 @@
         </div>
     </div>
 
-    <!-- ========== SCRIPTS (loaded at the bottom) ========== -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FIXED: chess.js working version -->
-    <script src="https://unpkg.com/chess.js@0.13.4/dist/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js"></script>
-
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — FIXED CHESS.JS & GOOGLE SIGN-IN
+        // TSHAKA M ACADEMY — FINAL PRODUCTION VERSION
+        // Google Sign-In with custom styling, Demo always works
         // ============================================================
         
-        const BACKEND_URL = 'https://tshaka-m-academy-backend.onrender.com';
+        // ===== BACKEND URL =====
+        const BACKEND_URL = "https://tshaka-m-academy-backend.onrender.com/api";
+        const LUVUNO_URL = "https://luvuno-backend-proxy.onrender.com";
         
-        // ========== FIREBASE ==========
+        // ===== CREDENTIALS =====
+        const GOOGLE_CLIENT_ID = "1051964204069-9q54h4khuot5cg7li8gqt0meq3eutli5.apps.googleusercontent.com";
+        const DEEPSEEK_API_KEY = "sk-8720b69f049b447c85bb5165b5e1af83";
+        
+        // ===== FIREBASE =====
         const firebaseConfig = {
             apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
             authDomain: "mindflow-ai-education.firebaseapp.com",
@@ -446,78 +502,267 @@
         const provider = new firebase.auth.GoogleAuthProvider();
         const db = firebase.firestore();
         
+        // ===== DOM REFS =====
+        const loginOverlay = document.getElementById('loginOverlay');
+        const appContainer = document.getElementById('appContainer');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const logoutMainBtn = document.getElementById('logoutMainBtn');
+        const demoLoginBtn = document.getElementById('demoLoginBtn');
+        const loginError = document.getElementById('loginError');
+        
+        // ===== STATE =====
         let currentUser = null;
         let isDemo = false;
-        
-        // ========== GOOGLE SIGN-IN ==========
-        function manualGoogleSignIn() {
-            auth.signInWithPopup(provider)
-                .then(function(result) { loginUser(result.user); })
-                .catch(function(error) { 
-                    console.error('Sign-in error:', error);
-                    alert('Sign-in error: ' + error.message);
-                });
-        }
-        
-        function loginUser(user) {
-            currentUser = user;
-            isDemo = false;
-            document.getElementById('userEmailDisplay').textContent = user.email;
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            loadProfile(user.uid);
-        }
-        
-        function enterDemo() {
-            isDemo = true;
-            document.getElementById('userEmailDisplay').textContent = 'Demo User';
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-        }
-        
-        function logout() {
-            if (!isDemo) auth.signOut();
-            isDemo = false;
-            currentUser = null;
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
-        }
-        
-        async function loadProfile(uid) {
-            try {
-                const doc = await db.collection('users').doc(uid).get();
-                if (doc.exists) {
-                    document.getElementById('profileName').value = doc.data().name || '';
-                    document.getElementById('profilePhone').value = doc.data().phone || '';
-                }
-            } catch(e) {}
-        }
-        
-        // ========== CHESS (fixed with working chess.js) ==========
+        let idToken = null;
+        let chatSpeed = 35;
+        let reasoningMode = false;
         let chess = new Chess();
-        let boardElement = document.getElementById('chessBoard');
+        let stockfish = null;
         let isAIThinking = false;
         let gameHistory = [];
         let chessScore = 0;
         let chessGamesPlayed = 0;
         let chessGamesWon = 0;
-        let stockfish = null;
-        let stockfishReady = false;
+        let quizQuestions = [];
+        let currentQuestionIndex = 0;
+        let quizScore = 0;
+        let quizCorrect = 0;
+        let quizStreak = 0;
+        let quizTotal = 0;
+        let map = null;
+        let incognitoActive = false;
+        let fallActive = true;
         
+        // ============================================================
+        // LOGIN FUNCTIONS
+        // ============================================================
+        
+        // ENTER DEMO — ALWAYS WORKS IMMEDIATELY
+        function enterDemo() {
+            isDemo = true;
+            currentUser = { uid: 'demo', email: 'demo@tshaka.academy' };
+            userEmailDisplay.textContent = 'Demo User';
+            loginOverlay.classList.add('hidden');
+            appContainer.style.display = 'block';
+            loginError.textContent = '';
+            initApp();
+        }
+        
+        // GOOGLE LOGIN — using signInWithPopup
+        function loginWithGoogle() {
+            loginError.textContent = '⏳ Signing in...';
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    currentUser = user;
+                    isDemo = false;
+                    userEmailDisplay.textContent = user.email || 'User';
+                    loginOverlay.classList.add('hidden');
+                    appContainer.style.display = 'block';
+                    loginError.textContent = '';
+                    idToken = user.getIdToken();
+                    loadProfile(user.uid);
+                    initApp();
+                })
+                .catch((error) => {
+                    console.error('Google Sign-In error:', error);
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        loginError.textContent = '⚠️ Popup was closed. Please try again.';
+                    } else {
+                        loginError.textContent = '❌ Login failed: ' + error.message;
+                    }
+                });
+        }
+        
+        // LOGOUT
+        function logout() {
+            if (!isDemo) auth.signOut();
+            isDemo = false;
+            currentUser = null;
+            idToken = null;
+            loginOverlay.classList.remove('hidden');
+            appContainer.style.display = 'none';
+        }
+        
+        // ============================================================
+        // GOOGLE SIGN-IN BUTTON (One-Tap with custom CSS)
+        // ============================================================
+        function initGoogleSignIn() {
+            if (typeof google === 'undefined') { 
+                setTimeout(initGoogleSignIn, 500); 
+                return; 
+            }
+            
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: (response) => {
+                    const cred = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                    auth.signInWithCredential(cred)
+                        .then((result) => {
+                            const user = result.user;
+                            currentUser = user;
+                            isDemo = false;
+                            userEmailDisplay.textContent = user.email || 'User';
+                            loginOverlay.classList.add('hidden');
+                            appContainer.style.display = 'block';
+                            loginError.textContent = '';
+                            idToken = user.getIdToken();
+                            loadProfile(user.uid);
+                            initApp();
+                        })
+                        .catch((error) => {
+                            loginError.textContent = '❌ Login failed: ' + error.message;
+                        });
+                }
+            });
+            
+            // Render Google Sign-In button with custom styling
+            google.accounts.id.renderButton(
+                document.getElementById('googleSignInContainer'),
+                { 
+                    theme: 'outline', 
+                    size: 'large', 
+                    text: 'signin_with', 
+                    shape: 'pill',
+                    logo_alignment: 'left'
+                }
+            );
+        }
+        
+        // ===== FALLBACK: If Google button doesn't render =====
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const container = document.getElementById('googleSignInContainer');
+                if (container && container.children.length === 0) {
+                    const fallbackBtn = document.createElement('button');
+                    fallbackBtn.className = 'demo-btn';
+                    fallbackBtn.style.background = 'linear-gradient(135deg, #4285F4, #34A853)';
+                    fallbackBtn.innerHTML = '<i class="fab fa-google" style="font-size:1.2rem;"></i> Sign in with Google';
+                    fallbackBtn.onclick = function() {
+                        loginWithGoogle();
+                    };
+                    container.appendChild(fallbackBtn);
+                }
+            }, 3000);
+        });
+        
+        // ============================================================
+        // AUTH LISTENER
+        // ============================================================
+        auth.onAuthStateChanged((user) => {
+            if (user && !isDemo) {
+                currentUser = user;
+                isDemo = false;
+                userEmailDisplay.textContent = user.email || 'User';
+                loginOverlay.classList.add('hidden');
+                appContainer.style.display = 'block';
+                loginError.textContent = '';
+                idToken = user.getIdToken();
+                loadProfile(user.uid);
+                initApp();
+            }
+        });
+        
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        demoLoginBtn.addEventListener('click', enterDemo);
+        logoutMainBtn.addEventListener('click', logout);
+        
+        // ============================================================
+        // PROFILE LOAD
+        // ============================================================
+        async function loadProfile(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('profileName').value = data.name || '';
+                    document.getElementById('profilePhone').value = data.phone || '';
+                }
+            } catch(e) { console.log('Profile load error'); }
+        }
+        
+        // ============================================================
+        // CHAT FUNCTIONS
+        // ============================================================
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            input.value = '';
+            
+            const container = document.getElementById('chatMessages');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'chat-message user';
+            userDiv.innerHTML = `<strong>You:</strong><br>${message}`;
+            container.appendChild(userDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message ai';
+            typingDiv.innerHTML = '<span style="opacity:0.6;">Khensani is typing...</span>';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        grade: '10',
+                        subject: 'General',
+                        id_token: idToken || 'demo'
+                    })
+                });
+                typingDiv.remove();
+                const data = await response.json();
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'chat-message ai';
+                aiDiv.innerHTML = `<strong>Khensani:</strong><br>${data.reply || 'No response'}`;
+                container.appendChild(aiDiv);
+            } catch(e) {
+                typingDiv.remove();
+                const errDiv = document.createElement('div');
+                errDiv.className = 'chat-message ai';
+                errDiv.innerHTML = `<strong>Khensani:</strong> Sorry, I'm having trouble. Try again.`;
+                container.appendChild(errDiv);
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
+        document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+        
+        document.getElementById('chatSpeedSlider').addEventListener('input', () => {
+            chatSpeed = parseInt(document.getElementById('chatSpeedSlider').value);
+            document.getElementById('chatSpeedDisplay').textContent = chatSpeed + ' cps';
+        });
+        
+        document.getElementById('reasoningToggleBtn').addEventListener('click', () => {
+            reasoningMode = !reasoningMode;
+            document.getElementById('reasoningToggleBtn').textContent = reasoningMode ? 'ON' : 'OFF';
+        });
+        
+        // ============================================================
+        // CHESS FUNCTIONS
+        // ============================================================
         function initStockfish() {
             try {
                 stockfish = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
-                stockfish.onmessage = function(event) {
-                    if (event.data.startsWith('bestmove')) {
-                        const move = event.data.split(' ')[1];
+                stockfish.onmessage = (event) => {
+                    const line = event.data;
+                    if (line.startsWith('bestmove')) {
+                        const parts = line.split(' ');
+                        const move = parts[1];
                         if (move && move !== '(none)') makeAIMove(move);
                         isAIThinking = false;
                     }
                 };
                 stockfish.postMessage('uci');
                 stockfish.postMessage('isready');
-                stockfishReady = true;
-            } catch(e) { stockfishReady = false; }
+            } catch(e) { console.log('Stockfish init error'); }
         }
         
         function getAIDepth() {
@@ -526,11 +771,9 @@
         }
         
         function requestAIMove(fen) {
-            if (!stockfishReady) {
+            if (!stockfish) {
                 const moves = chess.moves();
-                if (moves.length > 0) {
-                    setTimeout(function() { makeAIMove(moves[Math.floor(Math.random() * moves.length)]); }, 200);
-                }
+                if (moves.length > 0) setTimeout(() => makeAIMove(moves[Math.floor(Math.random() * moves.length)]), 200);
                 return;
             }
             stockfish.postMessage('position fen ' + fen);
@@ -543,15 +786,17 @@
             if (result) {
                 gameHistory.push({ from: move, to: move });
                 renderChessBoard();
-                if (chess.game_over()) alert('Game over.');
+                if (chess.game_over()) {
+                    alert(chess.in_checkmate() ? 'Checkmate! AI wins.' : 'Draw.');
+                }
             }
             isAIThinking = false;
         }
         
         function renderChessBoard() {
             const fen = chess.fen();
-            const boardHtml = fenToBoardHtml(fen);
-            boardElement.innerHTML = boardHtml;
+            const boardElement = document.getElementById('chessBoard');
+            boardElement.innerHTML = fenToBoardHtml(fen);
             updateChessStatus();
         }
         
@@ -560,10 +805,7 @@
             const board = parts[0];
             const rows = board.split('/');
             let html = '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;aspect-ratio:1/1;background:#1a1a2e;padding:8px;border-radius:12px;">';
-            const pieceMap = {
-                'r': '♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟',
-                'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'
-            };
+            const pieceMap = { 'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙' };
             let rowIdx = 0;
             for (let row of rows) {
                 let colIdx = 0;
@@ -598,7 +840,7 @@
             document.getElementById('moveHistory').textContent = history.map(m => m.san).join(' ') || 'No moves yet';
         }
         
-        boardElement.addEventListener('click', function(e) {
+        document.getElementById('chessBoard').addEventListener('click', (e) => {
             const square = e.target.closest('.square');
             if (!square || isAIThinking || chess.game_over()) return;
             const pos = square.dataset.pos;
@@ -611,13 +853,8 @@
                     gameHistory.push({ from: move.from, to: move.to });
                     renderChessBoard();
                     if (chess.game_over()) {
-                        if (chess.in_checkmate()) {
-                            chessScore += 10;
-                            chessGamesWon++;
-                            document.getElementById('chessGamesWon').textContent = chessGamesWon;
-                            document.getElementById('chessScore').textContent = chessScore;
-                        }
-                        alert('Game over.');
+                        if (chess.in_checkmate()) { chessScore += 10; chessGamesWon++; }
+                        alert(chess.in_checkmate() ? 'Checkmate! You win!' : 'Draw.');
                         return;
                     }
                     if (chess.turn() === 'b') {
@@ -628,15 +865,15 @@
             }
         });
         
-        document.getElementById('chessNewBtn').addEventListener('click', function() {
+        document.getElementById('chessNewBtn').addEventListener('click', () => {
             chess = new Chess();
             gameHistory = [];
+            chessGamesPlayed++;
             renderChessBoard();
-            document.getElementById('turnIndicator').textContent = 'White to move';
-            document.getElementById('moveHistory').textContent = 'No moves yet';
+            document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
         });
         
-        document.getElementById('chessUndoBtn').addEventListener('click', function() {
+        document.getElementById('chessUndoBtn').addEventListener('click', () => {
             if (gameHistory.length === 0) return;
             chess.undo();
             gameHistory.pop();
@@ -644,40 +881,39 @@
             renderChessBoard();
         });
         
-        document.getElementById('chessHintBtn').addEventListener('click', function() {
+        document.getElementById('chessHintBtn').addEventListener('click', () => {
             const moves = chess.moves({ verbose: true });
             if (moves.length > 0) alert('Hint: Try moving ' + moves[0].from + ' to ' + moves[0].to);
         });
         
-        // ========== QUIZ ==========
-        let quizQuestions = [];
-        let currentQuestionIndex = 0;
-        let quizScore = 0;
-        let quizCorrect = 0;
-        let quizStreak = 0;
-        let quizTotal = 0;
-        
+        // ============================================================
+        // QUIZ FUNCTIONS
+        // ============================================================
         const questionBank = {
             math: [
                 { q: 'Solve: 2x + 5 = 13', options: ['x = 4', 'x = 5', 'x = 6', 'x = 3'], answer: 0 },
-                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 }
+                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 },
+                { q: 'Simplify: 3(a+2b) - 2(a-b)', options: ['a+8b', 'a+4b', '5a+4b', 'a-4b'], answer: 0 }
             ],
             science: [
                 { q: 'What is the chemical symbol for water?', options: ['H2O', 'CO2', 'NaCl', 'HCl'], answer: 0 },
-                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 }
+                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 },
+                { q: 'What is the speed of light approximately?', options: ['3×10^8 m/s', '3×10^6 m/s', '3×10^10 m/s', '3×10^4 m/s'], answer: 0 }
             ],
             history: [
-                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 }
+                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 },
+                { q: 'Who was the first President of South Africa?', options: ['Nelson Mandela', 'Thabo Mbeki', 'FW de Klerk', 'PW Botha'], answer: 0 }
             ],
             coding: [
-                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None of the above'], answer: 0 }
+                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None of the above'], answer: 0 },
+                { q: 'Which language is used for web styling?', options: ['CSS', 'HTML', 'Python', 'Java'], answer: 0 }
             ]
         };
         
-        document.getElementById('quizGenerateBtn').addEventListener('click', function() {
+        document.getElementById('quizGenerateBtn').addEventListener('click', () => {
             const subject = document.getElementById('quizSubject').value;
             const bank = questionBank[subject] || questionBank.math;
-            quizQuestions = bank.map(function(q) { return { ...q }; });
+            quizQuestions = bank.map(q => ({ ...q }));
             currentQuestionIndex = 0;
             quizScore = 0;
             quizCorrect = 0;
@@ -685,9 +921,10 @@
             quizStreak = 0;
             renderQuizQuestion();
             updateQuizStats();
+            document.getElementById('quizCount').textContent = parseInt(document.getElementById('quizCount').textContent) + 1;
         });
         
-        document.getElementById('quizResetBtn').addEventListener('click', function() {
+        document.getElementById('quizResetBtn').addEventListener('click', () => {
             quizQuestions = [];
             currentQuestionIndex = 0;
             quizScore = 0;
@@ -704,10 +941,10 @@
                     <div style="text-align:center;padding:20px;">
                         <h3>🎉 Quiz Complete!</h3>
                         <p style="font-size:1.5rem;font-weight:bold;color:var(--secondary);">${quizScore}/${quizQuestions.length}</p>
+                        <p style="color:var(--text-secondary);">${Math.round(quizScore/quizQuestions.length*100)}%</p>
                         <button onclick="document.getElementById('quizGenerateBtn').click()" class="chat-send" style="margin-top:15px;">Try Again</button>
                     </div>
                 `;
-                document.getElementById('quizCount').textContent = parseInt(document.getElementById('quizCount').textContent) + 1;
                 return;
             }
             const q = quizQuestions[currentQuestionIndex];
@@ -717,10 +954,9 @@
                     <p style="font-size:1.1rem;margin-top:8px;font-weight:500;">${q.q}</p>
                 </div>
             `;
-            q.options.forEach(function(option, idx) {
+            q.options.forEach((option, idx) => {
                 html += `<button class="quiz-option" data-index="${idx}" onclick="selectQuizOption(this, ${idx})">${String.fromCharCode(65+idx)}. ${option}</button>`;
             });
-            html += `<div style="margin-top:12px;font-size:0.7rem;color:var(--text-secondary);">⚛️ Quantum Powered</div>`;
             document.getElementById('quizContainer').innerHTML = html;
         }
         
@@ -728,7 +964,7 @@
             const q = quizQuestions[currentQuestionIndex];
             const correct = q.answer;
             const allOptions = document.querySelectorAll('.quiz-option');
-            allOptions.forEach(function(btn) { btn.disabled = true; });
+            allOptions.forEach(btn => btn.disabled = true);
             if (idx === correct) {
                 el.classList.add('correct');
                 quizScore++;
@@ -740,7 +976,7 @@
                 quizStreak = 0;
             }
             updateQuizStats();
-            setTimeout(function() { currentQuestionIndex++; renderQuizQuestion(); }, 1500);
+            setTimeout(() => { currentQuestionIndex++; renderQuizQuestion(); }, 1500);
         };
         
         function updateQuizStats() {
@@ -750,127 +986,60 @@
             document.getElementById('quizStreakDisplay').textContent = quizStreak;
         }
         
-        // ========== CHAT ==========
-        let chatSpeed = 35;
-        let reasoningMode = false;
-        
-        document.getElementById('chatSpeedSlider').addEventListener('input', function() {
-            chatSpeed = parseInt(document.getElementById('chatSpeedSlider').value);
-            document.getElementById('chatSpeedDisplay').textContent = chatSpeed + ' cps';
-        });
-        
-        document.getElementById('reasoningToggleBtn').addEventListener('click', function() {
-            reasoningMode = !reasoningMode;
-            document.getElementById('reasoningToggleBtn').textContent = reasoningMode ? 'ON' : 'OFF';
-            document.getElementById('reasoningToggleBtn').style.background = reasoningMode ? 'rgba(0,255,136,0.2)' : '';
-        });
-        
-        async function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message) return;
-            input.value = '';
-            
-            const container = document.getElementById('chatMessages');
-            const userDiv = document.createElement('div');
-            userDiv.className = 'chat-message user';
-            userDiv.innerHTML = '<strong>You:</strong><br>' + message;
-            container.appendChild(userDiv);
-            container.scrollTop = container.scrollHeight;
-            
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message ai';
-            typingDiv.innerHTML = '<span style="opacity:0.6;">Khensani is typing...</span>';
-            container.appendChild(typingDiv);
-            container.scrollTop = container.scrollHeight;
-            
-            try {
-                const response = await fetch(BACKEND_URL + '/api/chat/stream', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        language: 'english',
-                        grade: 'university',
-                        subject: 'general',
-                        reasoning: reasoningMode,
-                        speed: chatSpeed
-                    })
-                });
-                typingDiv.remove();
-                const aiDiv = document.createElement('div');
-                aiDiv.className = 'chat-message ai';
-                aiDiv.innerHTML = '<strong>Khensani:</strong><br><span id="streamingText"></span>';
-                container.appendChild(aiDiv);
-                const textSpan = aiDiv.querySelector('#streamingText');
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullText = '';
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    fullText += decoder.decode(value);
-                    textSpan.textContent = fullText;
-                    container.scrollTop = container.scrollHeight;
-                }
-            } catch(e) {
-                typingDiv.remove();
-                const errDiv = document.createElement('div');
-                errDiv.className = 'chat-message ai';
-                errDiv.innerHTML = '<strong>Khensani:</strong> Sorry, I\'m having trouble. Try again.';
-                container.appendChild(errDiv);
-            }
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
-        document.getElementById('chatInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendChatMessage();
-        });
-        
-        // ========== MAP ==========
-        let map;
+        // ============================================================
+        // MAP FUNCTIONS
+        // ============================================================
         function initMap() {
+            if (map) return;
             map = L.map('childMap').setView([-26.1395, 28.4134], 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', subdomains: 'abcd' }).addTo(map);
-            const childIcon = L.divIcon({ html: '<div style="background:linear-gradient(135deg,#00B4D8,#8A2BE2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;"><i class="fas fa-child" style="color:white;"></i></div>', iconSize: [30,30] });
-            L.marker([-26.1375, 28.4140], { icon: childIcon }).addTo(map).bindPopup('📍 Child Location');
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap',
+                subdomains: 'abcd'
+            }).addTo(map);
+            L.marker([-26.1375, 28.4140], {
+                icon: L.divIcon({
+                    html: '<div style="background:linear-gradient(135deg,#00B4D8,#8A2BE2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;"><i class="fas fa-child" style="color:white;"></i></div>',
+                    iconSize: [30,30]
+                })
+            }).addTo(map).bindPopup('📍 Child Location');
         }
-        document.getElementById('mapRefreshBtn').addEventListener('click', function() {
+        
+        document.getElementById('mapRefreshBtn').addEventListener('click', () => {
             if (map) map.setView([-26.1375 + (Math.random()-0.5)*0.01, 28.4140 + (Math.random()-0.5)*0.01], 14);
         });
         
-        // ========== WHATSAPP ==========
-        function openWhatsApp(type) {
+        // ============================================================
+        // WHATSAPP
+        // ============================================================
+        window.openWhatsApp = function(type) {
             const phone = document.getElementById('profilePhone').value || '27733997997';
             const clean = phone.replace(/\D/g, '');
-            window.open('https://wa.me/' + clean + '?text=' + encodeURIComponent('Hello from Tshaka M Academy!'), '_blank');
-        }
-        window.openWhatsApp = openWhatsApp;
+            const msg = encodeURIComponent(`Hello from Tshaka M Academy! I'm using the ${type.replace('_', ' ')} group.`);
+            window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
+        };
         
-        // ========== INCOGNITO & FALL ==========
-        let incognitoActive = false;
-        let fallActive = true;
-        
-        function toggleIncognito() {
+        // ============================================================
+        // INCOGNITO & FALL
+        // ============================================================
+        window.toggleIncognito = function() {
             incognitoActive = !incognitoActive;
-            document.getElementById('incognitoToggle').classList.toggle('active', incognitoActive);
-            document.getElementById('incognitoToggle').style.background = incognitoActive ? 'var(--primary)' : '#333';
+            const toggle = document.getElementById('incognitoToggle');
+            toggle.classList.toggle('active', incognitoActive);
+            toggle.style.background = incognitoActive ? 'var(--primary)' : '#333';
             alert(incognitoActive ? '🔒 Incognito mode ON — no tracking.' : '🔓 Incognito mode OFF — tracking enabled.');
-        }
-        window.toggleIncognito = toggleIncognito;
+        };
         
-        function toggleFall() {
+        window.toggleFall = function() {
             fallActive = !fallActive;
-            document.getElementById('fallToggle').classList.toggle('active', fallActive);
-            document.getElementById('fallToggle').style.background = fallActive ? 'var(--primary)' : '#333';
+            const toggle = document.getElementById('fallToggle');
+            toggle.classList.toggle('active', fallActive);
+            toggle.style.background = fallActive ? 'var(--primary)' : '#333';
             document.getElementById('fallAlert').style.display = 'none';
             alert(fallActive ? '⚠️ Fall detection ON.' : '⚠️ Fall detection OFF.');
-        }
-        window.toggleFall = toggleFall;
+        };
         
         if (window.DeviceMotionEvent) {
-            window.addEventListener('devicemotion', function(e) {
+            window.addEventListener('devicemotion', (e) => {
                 if (!fallActive) return;
                 const mag = Math.sqrt((e.accelerationIncludingGravity.x||0)**2 + (e.accelerationIncludingGravity.y||0)**2 + (e.accelerationIncludingGravity.z||0)**2);
                 if (mag > 25) {
@@ -880,44 +1049,41 @@
                     if (clean.length > 5) {
                         window.open('https://wa.me/' + clean + '?text=' + encodeURIComponent('🚨 Emergency: Fall detected.'), '_blank');
                     }
-                    setTimeout(function() { document.getElementById('fallAlert').style.display = 'none'; }, 10000);
+                    setTimeout(() => { document.getElementById('fallAlert').style.display = 'none'; }, 10000);
                 }
             }, { passive: true });
         }
         
-        // ========== PROFILE ==========
-        document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+        // ============================================================
+        // SETTINGS SAVE
+        // ============================================================
+        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
             const uid = isDemo ? 'demo' : (currentUser ? currentUser.uid : 'demo');
             const name = document.getElementById('profileName').value;
             const phone = document.getElementById('profilePhone').value;
             try {
-                await db.collection('users').doc(uid).set({ name: name, phone: phone, updatedAt: new Date() }, { merge: true });
+                await db.collection('users').doc(uid).set({ name, phone, updatedAt: new Date() }, { merge: true });
                 alert('✅ Settings saved!');
             } catch(e) { alert('Error saving: ' + e.message); }
         });
         
-        // ========== EVENT LISTENERS ==========
-        document.getElementById('demoLoginBtn').addEventListener('click', enterDemo);
-        document.getElementById('logoutMainBtn').addEventListener('click', logout);
-        
-        // ========== NAVIGATION ==========
-        document.querySelectorAll('.menu-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        document.querySelectorAll('.menu-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
-                document.getElementById('section-' + btn.dataset.section).classList.add('active');
-                if (btn.dataset.section === 'map' && !map) { setTimeout(initMap, 300); }
-                if (btn.dataset.section === 'chess') { renderChessBoard(); }
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`section-${btn.dataset.section}`).classList.add('active');
+                if (btn.dataset.section === 'map') setTimeout(initMap, 300);
+                if (btn.dataset.section === 'chess') renderChessBoard();
             });
         });
         
-        // ========== AUTH STATE ==========
-        auth.onAuthStateChanged(function(user) {
-            if (user && !isDemo) loginUser(user);
-        });
-        
-        // ========== PARTICLES ==========
+        // ============================================================
+        // PARTICLES
+        // ============================================================
         particlesJS('particles-js', {
             particles: {
                 number: { value: 55, density: { enable: true, value_area: 1000 } },
@@ -931,16 +1097,29 @@
             interactivity: { events: { onhover: { enable: true, mode: "repulse" } } }
         });
         
-        // ========== INIT ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Tshaka M Academy · Home-Schooling Focus');
+        // ============================================================
+        // INIT APP
+        // ============================================================
+        function initApp() {
+            if (!map) setTimeout(initMap, 500);
             initStockfish();
             renderChessBoard();
-            document.getElementById('chessGamesPlayed').textContent = 0;
             document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
-        });
+            document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
+            console.log('🚀 Tshaka M Academy · Full HTML Loaded');
+            console.log('   👤 User:', isDemo ? 'Demo' : currentUser?.email);
+            console.log('   🔑 Google Client ID:', GOOGLE_CLIENT_ID);
+            console.log('   🔐 DeepSeek API Key configured:', !!DEEPSEEK_API_KEY);
+            console.log('   📡 Backend:', BACKEND_URL);
+            console.log('   📡 Luvuno:', LUVUNO_URL);
+        }
+        
+        // ============================================================
+        // START
+        // ============================================================
+        initGoogleSignIn();
+        console.log('✅ Ready. Click Demo to enter immediately.');
+        console.log('✅ Google Sign-In with custom styling loaded.');
     </script>
 </body>
 </html>
