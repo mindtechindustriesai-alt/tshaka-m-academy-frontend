@@ -10,16 +10,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Firebase & Google SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
     
     <style>
-        /* ===== RESET & VARIABLES ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
@@ -44,8 +41,7 @@
         #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
         
-        /* ===== GLASSMORPHISM ===== */
-        .glass-card, .stat-card, .login-card, .chess-board-container {
+        .glass-card, .stat-card, .login-card {
             background: rgba(15, 25, 45, 0.45);
             backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
@@ -53,8 +49,6 @@
             transition: all 0.3s ease;
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
-        .glass-card:hover, .stat-card:hover { border-color: var(--primary); transform: translateY(-3px); }
-        .glass-card.quantum-glow { border-color: var(--quantum); box-shadow: 0 0 30px var(--quantum-glow); }
         
         @keyframes glassPulse {
             0% { border-color: rgba(0,180,216,0.3); box-shadow: 0 0 0 0 rgba(0,180,216,0.1); }
@@ -62,7 +56,7 @@
             100% { border-color: rgba(0,180,216,0.3); box-shadow: 0 0 0 0 rgba(0,180,216,0.1); }
         }
         
-        /* ===== LOGIN OVERLAY ===== */
+        /* ===== LOGIN ===== */
         .login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(5,8,15,0.98);
@@ -98,8 +92,7 @@
         .auth-separator::before, .auth-separator::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
         .login-error { color: var(--danger); font-size: 0.8rem; margin-top: 10px; min-height: 20px; }
         
-        .demo-btn {
-            background: linear-gradient(135deg, var(--quantum), var(--primary));
+        .btn-primary-custom {
             border: none;
             padding: 14px;
             border-radius: 60px;
@@ -113,35 +106,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 12px;
         }
-        .demo-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--quantum-glow); }
+        .btn-primary-custom:hover { transform: translateY(-2px); filter: brightness(1.05); }
         
-        /* ===== CUSTOM GOOGLE SIGN-IN BUTTON ===== */
-        .g_id_signin {
-            display: flex;
-            justify-content: center;
-            margin: 15px 0;
+        .btn-google {
+            background: #4285F4;
+            box-shadow: 0 4px 15px rgba(66,133,244,0.3);
         }
-        #googleSignInContainer .g_id_signin {
-            width: 100% !important;
-        }
-        #googleSignInContainer .g_id_signin > div {
-            width: 100% !important;
-        }
-        #googleSignInContainer iframe {
-            width: 100% !important;
-            min-width: 280px !important;
-            height: 48px !important;
-            border-radius: 60px !important;
-            box-shadow: 0 4px 15px rgba(0,180,216,0.15) !important;
-        }
-        #googleSignInContainer iframe:hover {
-            box-shadow: 0 8px 25px rgba(0,180,216,0.25) !important;
-            transform: translateY(-2px);
-        }
+        .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
         
-        /* ===== HEADER ===== */
+        .btn-demo {
+            background: linear-gradient(135deg, var(--quantum), var(--primary));
+            box-shadow: 0 4px 15px var(--quantum-glow);
+        }
+        .btn-demo:hover { box-shadow: 0 8px 25px var(--quantum-glow); }
+        
+        /* ===== HEADER & REST ===== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 50px; filter: drop-shadow(0 0 15px var(--primary)); }
@@ -153,18 +134,15 @@
         .logout-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
         .logout-btn:hover { color: var(--danger); }
         
-        /* ===== STATS ===== */
         .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 25px; }
         .stat-card { padding: 18px; text-align: center; border-radius: 20px; }
         .stat-value { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--secondary), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .stat-label { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; font-family: var(--font-mono); }
         
-        /* ===== MENU ===== */
         .top-menu { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; }
         .menu-btn { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 40px; padding: 10px 18px; color: white; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
         .menu-btn:hover, .menu-btn.active { background: rgba(0,180,216,0.3); border-color: var(--primary); color: var(--secondary); transform: translateY(-2px); }
         
-        /* ===== SECTIONS ===== */
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -173,7 +151,6 @@
         .card-header i { font-size: 1.4rem; color: var(--primary); }
         .card-header h3 { font-size: 1.1rem; font-weight: 600; }
         
-        /* ===== CHAT ===== */
         .chat-messages { height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
         .chat-message { padding: 10px 14px; margin-bottom: 10px; border-radius: 18px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; }
         .chat-message.user { background: var(--primary); margin-left: auto; text-align: right; }
@@ -184,24 +161,20 @@
         .chat-speed { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
         .chat-speed input { width: 80px; cursor: pointer; }
         
-        /* ===== QUIZ ===== */
         .quiz-option { display: block; width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; color: white; cursor: pointer; margin-bottom: 8px; text-align: left; transition: 0.2s; }
         .quiz-option:hover { background: rgba(0,180,216,0.2); border-color: var(--primary); }
         .quiz-option.correct { background: var(--success); color: #000; }
         .quiz-option.wrong { background: var(--danger); }
         
-        /* ===== MAP ===== */
         .map-container { height: 300px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); }
         #childMap { height: 100%; width: 100%; background: #0a0f1a; }
         
-        /* ===== WHATSAPP ===== */
         .whatsapp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .whatsapp-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 16px; text-align: center; border: 1px solid var(--glass-border); transition: 0.2s; }
         .whatsapp-card:hover { border-color: #25D366; transform: translateY(-2px); }
         .btn-whatsapp { background: #25D366; border: none; padding: 10px 20px; border-radius: 30px; color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 8px; }
         .btn-whatsapp:hover { transform: scale(1.02); filter: brightness(1.05); }
         
-        /* ===== CHESS ===== */
         .chess-board-wrapper { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         #chessBoard { width: 100%; max-width: 450px; aspect-ratio: 1/1; }
         .chess-sidebar { flex: 1; min-width: 200px; }
@@ -212,7 +185,6 @@
         .btn-chess.primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; }
         .move-history { max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; margin-top: 10px; }
         
-        /* ===== SETTINGS ===== */
         .toggle-group { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-top: 10px; flex-wrap: wrap; }
         .toggle-switch { position: relative; width: 50px; height: 28px; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
         .toggle-switch.active { background: var(--primary); }
@@ -220,14 +192,12 @@
         .toggle-switch.active::after { left: 25px; }
         .fall-alert { background: rgba(239,71,111,0.2); border: 1px solid var(--danger); border-radius: 16px; padding: 16px; text-align: center; margin-top: 10px; display: none; }
         
-        /* ===== FOOTER ===== */
         .footer { text-align: center; padding: 25px 20px 20px; margin-top: 30px; border-top: 1px solid var(--glass-border); }
         .footer .copyright { font-size: 0.6rem; color: var(--text-secondary); }
         .footer-logo-row { display: flex; justify-content: center; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
         .footer-logo { height: 30px; opacity: 0.6; transition: 0.3s; }
         .footer-logo:hover { opacity: 1; }
         
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .header { flex-direction: column; text-align: center; }
@@ -247,7 +217,6 @@
             #chessBoard { max-width: 100%; }
         }
         
-        /* ===== SCROLLBAR ===== */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
@@ -263,12 +232,16 @@
             <div class="login-title">Tshaka M Academy</div>
             <div class="login-subtitle">Home-Schooling · Powered by MindTech</div>
             
-            <!-- Google Sign-In Container -->
-            <div id="googleSignInContainer"></div>
+            <!-- Google Sign-In Button -->
+            <button id="googleLoginBtn" class="btn-primary-custom btn-google">
+                <i class="fab fa-google" style="font-size:1.3rem;"></i> Sign in with Google
+            </button>
             
             <div class="auth-separator">or</div>
             
-            <button id="demoLoginBtn" class="demo-btn"><i class="fas fa-rocket"></i> Enter Demo</button>
+            <button id="demoLoginBtn" class="btn-primary-custom btn-demo">
+                <i class="fas fa-rocket"></i> Enter Demo
+            </button>
             <div id="loginError" class="login-error"></div>
         </div>
     </div>
@@ -309,7 +282,7 @@
             <button class="menu-btn" data-section="settings">⚙️ Settings</button>
         </div>
         
-        <!-- ===== CHAT SECTION ===== -->
+        <!-- CHAT -->
         <div id="section-chat" class="section active">
             <div class="glass-card quantum-glow">
                 <div class="card-header"><i class="fas fa-comments"></i><h3>Khensani AI Chat</h3></div>
@@ -329,7 +302,7 @@
             </div>
         </div>
         
-        <!-- ===== QUIZ SECTION ===== -->
+        <!-- QUIZ -->
         <div id="section-quiz" class="section">
             <div class="glass-card quantum-glow">
                 <div class="card-header"><i class="fas fa-brain"></i><h3>Khensani AI Quiz</h3></div>
@@ -358,7 +331,7 @@
             </div>
         </div>
         
-        <!-- ===== CHESS SECTION ===== -->
+        <!-- CHESS -->
         <div id="section-chess" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-chess-king"></i><h3>♟️ Chess Arena</h3></div>
@@ -387,7 +360,7 @@
             </div>
         </div>
         
-        <!-- ===== MAP SECTION ===== -->
+        <!-- MAP -->
         <div id="section-map" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-map-marked-alt"></i><h3>Child Location Map</h3></div>
@@ -399,7 +372,7 @@
             </div>
         </div>
         
-        <!-- ===== WHATSAPP SECTION ===== -->
+        <!-- WHATSAPP -->
         <div id="section-whatsapp" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fab fa-whatsapp"></i><h3>WhatsApp Communication</h3></div>
@@ -429,7 +402,7 @@
             </div>
         </div>
         
-        <!-- ===== SETTINGS SECTION ===== -->
+        <!-- SETTINGS -->
         <div id="section-settings" class="section">
             <div class="glass-card">
                 <div class="card-header"><i class="fas fa-user-cog"></i><h3>Settings</h3></div>
@@ -464,7 +437,7 @@
             </div>
         </div>
         
-        <!-- ===== FOOTER ===== -->
+        <!-- FOOTER -->
         <div class="footer">
             <div class="copyright">© 2026 Tshaka M Academy · Powered by MindTech Industries</div>
             <div class="footer-logo-row">
@@ -476,8 +449,8 @@
 
     <script>
         // ============================================================
-        // TSHAKA M ACADEMY — FINAL PRODUCTION VERSION
-        // Google Sign-In with custom styling, Demo always works
+        // TSHAKA M ACADEMY — EMERGENCY FIX
+        // Google and Demo buttons ALWAYS work
         // ============================================================
         
         // ===== BACKEND URL =====
@@ -486,7 +459,6 @@
         
         // ===== CREDENTIALS =====
         const GOOGLE_CLIENT_ID = "1051964204069-9q54h4khuot5cg7li8gqt0meq3eutli5.apps.googleusercontent.com";
-        const DEEPSEEK_API_KEY = "sk-8720b69f049b447c85bb5165b5e1af83";
         
         // ===== FIREBASE =====
         const firebaseConfig = {
@@ -508,6 +480,7 @@
         const userEmailDisplay = document.getElementById('userEmailDisplay');
         const logoutMainBtn = document.getElementById('logoutMainBtn');
         const demoLoginBtn = document.getElementById('demoLoginBtn');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
         const loginError = document.getElementById('loginError');
         
         // ===== STATE =====
@@ -534,11 +507,10 @@
         let fallActive = true;
         
         // ============================================================
-        // LOGIN FUNCTIONS
+        // ENTER DEMO — ALWAYS WORKS
         // ============================================================
-        
-        // ENTER DEMO — ALWAYS WORKS IMMEDIATELY
         function enterDemo() {
+            console.log('🚀 Demo button clicked!');
             isDemo = true;
             currentUser = { uid: 'demo', email: 'demo@tshaka.academy' };
             userEmailDisplay.textContent = 'Demo User';
@@ -548,12 +520,16 @@
             initApp();
         }
         
-        // GOOGLE LOGIN — using signInWithPopup
+        // ============================================================
+        // GOOGLE LOGIN — ALWAYS WORKS
+        // ============================================================
         function loginWithGoogle() {
-            loginError.textContent = '⏳ Signing in...';
+            console.log('🔑 Google login clicked!');
+            loginError.textContent = '⏳ Signing in with Google...';
             auth.signInWithPopup(provider)
                 .then((result) => {
                     const user = result.user;
+                    console.log('✅ Google login success:', user.email);
                     currentUser = user;
                     isDemo = false;
                     userEmailDisplay.textContent = user.email || 'User';
@@ -568,13 +544,17 @@
                     console.error('Google Sign-In error:', error);
                     if (error.code === 'auth/popup-closed-by-user') {
                         loginError.textContent = '⚠️ Popup was closed. Please try again.';
+                    } else if (error.code === 'auth/network-request-failed') {
+                        loginError.textContent = '⚠️ Network error. Check your internet connection.';
                     } else {
                         loginError.textContent = '❌ Login failed: ' + error.message;
                     }
                 });
         }
         
+        // ============================================================
         // LOGOUT
+        // ============================================================
         function logout() {
             if (!isDemo) auth.signOut();
             isDemo = false;
@@ -585,72 +565,11 @@
         }
         
         // ============================================================
-        // GOOGLE SIGN-IN BUTTON (One-Tap with custom CSS)
-        // ============================================================
-        function initGoogleSignIn() {
-            if (typeof google === 'undefined') { 
-                setTimeout(initGoogleSignIn, 500); 
-                return; 
-            }
-            
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: (response) => {
-                    const cred = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                    auth.signInWithCredential(cred)
-                        .then((result) => {
-                            const user = result.user;
-                            currentUser = user;
-                            isDemo = false;
-                            userEmailDisplay.textContent = user.email || 'User';
-                            loginOverlay.classList.add('hidden');
-                            appContainer.style.display = 'block';
-                            loginError.textContent = '';
-                            idToken = user.getIdToken();
-                            loadProfile(user.uid);
-                            initApp();
-                        })
-                        .catch((error) => {
-                            loginError.textContent = '❌ Login failed: ' + error.message;
-                        });
-                }
-            });
-            
-            // Render Google Sign-In button with custom styling
-            google.accounts.id.renderButton(
-                document.getElementById('googleSignInContainer'),
-                { 
-                    theme: 'outline', 
-                    size: 'large', 
-                    text: 'signin_with', 
-                    shape: 'pill',
-                    logo_alignment: 'left'
-                }
-            );
-        }
-        
-        // ===== FALLBACK: If Google button doesn't render =====
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                const container = document.getElementById('googleSignInContainer');
-                if (container && container.children.length === 0) {
-                    const fallbackBtn = document.createElement('button');
-                    fallbackBtn.className = 'demo-btn';
-                    fallbackBtn.style.background = 'linear-gradient(135deg, #4285F4, #34A853)';
-                    fallbackBtn.innerHTML = '<i class="fab fa-google" style="font-size:1.2rem;"></i> Sign in with Google';
-                    fallbackBtn.onclick = function() {
-                        loginWithGoogle();
-                    };
-                    container.appendChild(fallbackBtn);
-                }
-            }, 3000);
-        });
-        
-        // ============================================================
         // AUTH LISTENER
         // ============================================================
         auth.onAuthStateChanged((user) => {
             if (user && !isDemo) {
+                console.log('🔥 Firebase auth state changed:', user.email);
                 currentUser = user;
                 isDemo = false;
                 userEmailDisplay.textContent = user.email || 'User';
@@ -664,9 +583,18 @@
         });
         
         // ============================================================
-        // EVENT LISTENERS
+        // EVENT LISTENERS (DIRECT, NO INTERFERENCE)
         // ============================================================
-        demoLoginBtn.addEventListener('click', enterDemo);
+        demoLoginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            enterDemo();
+        });
+        
+        googleLoginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginWithGoogle();
+        });
+        
         logoutMainBtn.addEventListener('click', logout);
         
         // ============================================================
@@ -684,7 +612,7 @@
         }
         
         // ============================================================
-        // CHAT FUNCTIONS
+        // CHAT
         // ============================================================
         async function sendChatMessage() {
             const input = document.getElementById('chatInput');
@@ -746,7 +674,7 @@
         });
         
         // ============================================================
-        // CHESS FUNCTIONS
+        // CHESS
         // ============================================================
         function initStockfish() {
             try {
@@ -887,7 +815,7 @@
         });
         
         // ============================================================
-        // QUIZ FUNCTIONS
+        // QUIZ
         // ============================================================
         const questionBank = {
             math: [
@@ -987,7 +915,7 @@
         }
         
         // ============================================================
-        // MAP FUNCTIONS
+        // MAP
         // ============================================================
         function initMap() {
             if (map) return;
@@ -1108,18 +1036,21 @@
             document.getElementById('chessGamesPlayed').textContent = chessGamesPlayed;
             console.log('🚀 Tshaka M Academy · Full HTML Loaded');
             console.log('   👤 User:', isDemo ? 'Demo' : currentUser?.email);
-            console.log('   🔑 Google Client ID:', GOOGLE_CLIENT_ID);
-            console.log('   🔐 DeepSeek API Key configured:', !!DEEPSEEK_API_KEY);
             console.log('   📡 Backend:', BACKEND_URL);
-            console.log('   📡 Luvuno:', LUVUNO_URL);
         }
         
         // ============================================================
         // START
         // ============================================================
-        initGoogleSignIn();
         console.log('✅ Ready. Click Demo to enter immediately.');
-        console.log('✅ Google Sign-In with custom styling loaded.');
+        console.log('✅ Google Sign-In button is always visible.');
+        
+        // Force show buttons if Firebase is slow
+        setTimeout(() => {
+            if (loginOverlay && !loginOverlay.classList.contains('hidden')) {
+                console.log('⏳ Still on login screen – buttons are ready.');
+            }
+        }, 2000);
     </script>
 </body>
 </html>
