@@ -1,30 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tshaka M Academy</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #00B4D8;
+            --secondary: #00F5D4;
+            --quantum: #8A2BE2;
+            --dark-bg: #05080F;
+            --glass-border: rgba(0,180,216,0.25);
+            --text-primary: #E8EDF5;
+            --text-secondary: #8A99B0;
+            --font-exo: 'Exo 2', sans-serif;
+        }
+        
+        body { font-family: var(--font-exo); background: var(--dark-bg); color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        /* ===== LOGIN ===== */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5,8,15,0.98);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-overlay.hidden { display: none; }
+        
+        .login-card {
+            background: rgba(15,25,45,0.45);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 40px 32px;
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .login-logo {
+            max-width: 280px;
+            width: 100%;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .login-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
+        .login-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 25px; letter-spacing: 2px; }
+        .auth-separator { display: flex; align-items: center; gap: 15px; margin: 16px 0; color: var(--text-secondary); font-size: 0.65rem; }
+        .auth-separator::before, .auth-separator::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
+        .login-error { color: #EF476F; font-size: 0.8rem; margin-top: 10px; min-height: 20px; }
+        
+        .btn-primary {
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            color: white;
+            transition: all 0.2s;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .btn-google { background: #4285F4; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
+        .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
+        .btn-demo { background: linear-gradient(135deg, var(--quantum), var(--primary)); box-shadow: 0 4px 15px rgba(138,43,226,0.3); }
+        .btn-demo:hover { box-shadow: 0 8px 25px rgba(138,43,226,0.5); }
+        
+        /* ===== APP ===== */
+        .app-container { display: none; max-width: 1200px; width: 100%; padding: 20px; margin: 0 auto; }
+        .app-container.active { display: block; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 25px; }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .header-logo { height: 50px; filter: drop-shadow(0 0 15px var(--primary)); }
+        .brand-text h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .brand-text p { font-size: 0.6rem; color: var(--text-secondary); letter-spacing: 2px; }
+        .user-area { display: flex; align-items: center; gap: 15px; background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); padding: 6px 16px; border-radius: 60px; border: 1px solid var(--glass-border); }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--quantum)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .user-email { font-size: 0.7rem; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
+        .logout-btn:hover { color: #EF476F; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 25px; }
+        .stat-card { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 18px; text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--secondary), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .stat-label { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; }
+        
+        .glass-card { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); }
+        .card-header i { font-size: 1.4rem; color: var(--primary); }
+        .card-header h3 { font-size: 1.1rem; font-weight: 600; }
+        
+        .chat-messages { height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
+        .chat-message { padding: 10px 14px; margin-bottom: 10px; border-radius: 18px; max-width: 85%; }
+        .chat-message.user { background: var(--primary); margin-left: auto; text-align: right; }
+        .chat-message.ai { background: rgba(255,255,255,0.08); border-left: 2px solid var(--secondary); }
+        .chat-input-group { display: flex; gap: 10px; align-items: center; }
+        .chat-input { flex: 1; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 60px; color: white; }
+        .chat-send { background: var(--primary); border: none; border-radius: 60px; padding: 12px 24px; color: white; cursor: pointer; font-weight: 600; }
+        
+        .top-menu { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; }
+        .menu-btn { background: rgba(15,25,45,0.45); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 40px; padding: 10px 18px; color: white; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+        .menu-btn:hover, .menu-btn.active { background: rgba(0,180,216,0.3); border-color: var(--primary); color: var(--secondary); }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .footer { text-align: center; padding: 25px 20px 20px; margin-top: 30px; border-top: 1px solid var(--glass-border); }
+        .footer .copyright { font-size: 0.6rem; color: var(--text-secondary); }
+        
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; text-align: center; }
+            .user-area { justify-content: center; }
+            .login-logo { max-width: 200px; }
+            .login-title { font-size: 1.6rem; }
+        }
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 12px; }
+            .stat-value { font-size: 1.3rem; }
+        }
+    </style>
 </head>
 <body>
-    <div id="loginOverlay">
-        <h1>Tshaka M Academy</h1>
-        <button id="googleBtn" onclick="loginWithGoogle()">Sign in with Google</button>
-        <button id="demoBtn" onclick="enterDemo()">Enter Demo</button>
-        <div id="errorMsg"></div>
-    </div>
-    <div id="appContainer" style="display:none;">
-        <h2>Welcome to Tshaka M Academy</h2>
-        <p id="userDisplay">Demo User</p>
-        <button onclick="logout()">Logout</button>
-        <div>
-            <h3>Chat</h3>
-            <input type="text" id="chatInput" placeholder="Ask a question...">
-            <button onclick="sendChat()">Send</button>
-            <div id="chatOutput"></div>
+
+    <!-- ===== LOGIN ===== -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <img src="https://i.postimg.cc/9XvJ6mQJ/logo-for-Tshaka-M-Academy-an-African-quant-0-removebg-preview.png" alt="Tshaka M Academy" class="login-logo">
+            <div class="login-title">Tshaka M Academy</div>
+            <div class="login-subtitle">Home-Schooling · Powered by MindTech</div>
+            
+            <button id="googleBtn" class="btn-primary btn-google">
+                <i class="fab fa-google" style="font-size:1.3rem;"></i> Sign in with Google
+            </button>
+            
+            <div class="auth-separator">or</div>
+            
+            <button id="demoBtn" class="btn-primary btn-demo">
+                <i class="fas fa-rocket"></i> Enter Demo
+            </button>
+            <div id="loginError" class="login-error"></div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- ===== APP ===== -->
+    <div id="appContainer" class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-area">
+                <img src="https://i.postimg.cc/9XvJ6mQJ/logo-for-Tshaka-M-Academy-an-African-quant-0-removebg-preview.png" alt="Tshaka M Academy" class="header-logo">
+                <div class="brand-text">
+                    <h1>Tshaka M Academy</h1>
+                    <p>Home-Schooling</p>
+                </div>
+            </div>
+            <div class="user-area">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <span class="user-email" id="userDisplay">Demo User</span>
+                <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Quizzes</div></div>
+            <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Chess Games</div></div>
+            <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Day Streak</div></div>
+            <div class="stat-card"><div class="stat-value">⚛️</div><div class="stat-label">Quantum Powered</div></div>
+        </div>
+
+        <!-- Menu -->
+        <div class="top-menu">
+            <button class="menu-btn active" data-section="chat">💬 Chat</button>
+            <button class="menu-btn" data-section="quiz">📝 Quiz</button>
+        </div>
+
+        <!-- Chat -->
+        <div id="section-chat" class="section active">
+            <div class="glass-card">
+                <div class="card-header"><i class="fas fa-comments"></i><h3>Khensani AI Chat</h3></div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message ai"><strong>Khensani:</strong> Hello! I'm your AI tutor. Ask me anything about your studies.</div>
+                </div>
+                <div class="chat-input-group">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Ask a question...">
+                    <button id="sendBtn" class="chat-send"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz -->
+        <div id="section-quiz" class="section">
+            <div class="glass-card">
+                <div class="card-header"><i class="fas fa-brain"></i><h3>Khensani AI Quiz</h3></div>
+                <select id="quizSubject" style="background:rgba(0,0,0,0.5);border:1px solid var(--glass-border);border-radius:30px;padding:8px 16px;color:white;margin-bottom:12px;">
+                    <option value="math">Math</option>
+                    <option value="science">Science</option>
+                    <option value="history">History</option>
+                    <option value="coding">Coding</option>
+                </select>
+                <button id="quizBtn" class="chat-send"><i class="fas fa-play"></i> Generate Quiz</button>
+                <div id="quizContainer" style="margin-top:15px;"><p style="color:var(--text-secondary);">Select a subject and click Generate.</p></div>
+                <div style="display:flex; gap:20px; margin-top:15px; flex-wrap:wrap; font-size:0.8rem;">
+                    <span>Score: <strong id="quizScore">0</strong></span>
+                    <span>Correct: <strong id="quizCorrect">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="copyright">© 2026 Tshaka M Academy · Powered by MindTech Industries</div>
+        </div>
+    </div>
+
     <script>
+        // ============================================================
+        // TSHAKA M ACADEMY — WORKING VERSION
+        // ============================================================
+        
+        // ===== BACKEND =====
+        var BACKEND_URL = "https://tshaka-m-academy-backend.onrender.com/api";
+        
         // ===== FIREBASE =====
         var firebaseConfig = {
             apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
@@ -37,88 +264,282 @@
         firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
         var provider = new firebase.auth.GoogleAuthProvider();
+        var db = firebase.firestore();
         
         // ===== DOM =====
         var loginOverlay = document.getElementById('loginOverlay');
         var appContainer = document.getElementById('appContainer');
         var userDisplay = document.getElementById('userDisplay');
-        var errorMsg = document.getElementById('errorMsg');
-        var chatOutput = document.getElementById('chatOutput');
+        var loginError = document.getElementById('loginError');
+        var chatMessages = document.getElementById('chatMessages');
+        var chatInput = document.getElementById('chatInput');
         
         // ===== STATE =====
         var isDemo = false;
+        var currentUser = null;
+        var idToken = null;
         
-        // ===== DEMO LOGIN =====
-        window.enterDemo = function() {
-            console.log('DEMO CLICKED');
+        // ============================================================
+        // LOGIN FUNCTIONS
+        // ============================================================
+        
+        // DEMO LOGIN
+        function enterDemo() {
+            console.log('🚀 DEMO LOGIN');
             isDemo = true;
+            currentUser = { uid: 'demo', email: 'demo@tshaka.academy' };
             userDisplay.textContent = 'Demo User';
-            loginOverlay.style.display = 'none';
-            appContainer.style.display = 'block';
-            errorMsg.textContent = '';
-        };
+            loginOverlay.classList.add('hidden');
+            appContainer.classList.add('active');
+            loginError.textContent = '';
+            initApp();
+        }
         
-        // ===== GOOGLE LOGIN =====
-        window.loginWithGoogle = function() {
-            console.log('GOOGLE CLICKED');
-            errorMsg.textContent = '⏳ Signing in...';
+        // GOOGLE LOGIN
+        function loginWithGoogle() {
+            console.log('🔑 GOOGLE LOGIN');
+            loginError.textContent = '⏳ Signing in...';
             auth.signInWithPopup(provider)
                 .then(function(result) {
                     var user = result.user;
-                    console.log('Google success:', user.email);
-                    userDisplay.textContent = user.email;
-                    loginOverlay.style.display = 'none';
-                    appContainer.style.display = 'block';
-                    errorMsg.textContent = '';
+                    console.log('✅ Google success:', user.email);
+                    currentUser = user;
+                    isDemo = false;
+                    userDisplay.textContent = user.email || 'User';
+                    loginOverlay.classList.add('hidden');
+                    appContainer.classList.add('active');
+                    loginError.textContent = '';
+                    idToken = user.getIdToken();
+                    loadProfile(user.uid);
+                    initApp();
                 })
                 .catch(function(error) {
-                    console.error('Google error:', error);
-                    errorMsg.textContent = '❌ ' + error.message;
+                    console.error('❌ Google error:', error);
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        loginError.textContent = '⚠️ Popup was closed. Please try again.';
+                    } else {
+                        loginError.textContent = '❌ ' + error.message;
+                    }
                 });
-        };
+        }
         
-        // ===== LOGOUT =====
-        window.logout = function() {
+        // LOGOUT
+        function logout() {
             if (!isDemo) auth.signOut();
             isDemo = false;
-            loginOverlay.style.display = 'block';
-            appContainer.style.display = 'none';
+            currentUser = null;
+            idToken = null;
+            loginOverlay.classList.remove('hidden');
+            appContainer.classList.remove('active');
+        }
+        
+        // ============================================================
+        // EVENT BINDING (Using onclick directly)
+        // ============================================================
+        document.getElementById('demoBtn').onclick = function() { enterDemo(); };
+        document.getElementById('googleBtn').onclick = function() { loginWithGoogle(); };
+        document.getElementById('logoutBtn').onclick = function() { logout(); };
+        
+        // Chat send
+        document.getElementById('sendBtn').onclick = function() { sendChatMessage(); };
+        document.getElementById('chatInput').onkeypress = function(e) {
+            if (e.key === 'Enter') sendChatMessage();
         };
         
-        // ===== CHAT =====
-        window.sendChat = function() {
-            var input = document.getElementById('chatInput');
-            var message = input.value.trim();
+        // Quiz
+        document.getElementById('quizBtn').onclick = function() { generateQuiz(); };
+        
+        // ============================================================
+        // PROFILE
+        // ============================================================
+        function loadProfile(uid) {
+            try {
+                db.collection('users').doc(uid).get()
+                    .then(function(doc) {
+                        if (doc.exists) {
+                            var data = doc.data();
+                            console.log('📋 Profile loaded:', data);
+                        }
+                    })
+                    .catch(function(e) { console.log('Profile load error:', e); });
+            } catch(e) { console.log('Profile error:', e); }
+        }
+        
+        // ============================================================
+        // CHAT
+        // ============================================================
+        function sendChatMessage() {
+            var message = chatInput.value.trim();
             if (!message) return;
-            input.value = '';
-            chatOutput.innerHTML += '<p><strong>You:</strong> ' + message + '</p>';
+            chatInput.value = '';
             
-            fetch('https://tshaka-m-academy-backend.onrender.com/api/chat', {
+            // User message
+            var userDiv = document.createElement('div');
+            userDiv.className = 'chat-message user';
+            userDiv.textContent = message;
+            chatMessages.appendChild(userDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Typing indicator
+            var typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message ai';
+            typingDiv.textContent = 'Khensani is typing...';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Send to backend
+            fetch(BACKEND_URL + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message, grade: '10', subject: 'General' })
+                body: JSON.stringify({
+                    message: message,
+                    grade: '10',
+                    subject: 'General',
+                    id_token: idToken || 'demo'
+                })
             })
             .then(function(response) { return response.json(); })
             .then(function(data) {
-                chatOutput.innerHTML += '<p><strong>Khensani:</strong> ' + (data.reply || 'No response') + '</p>';
+                typingDiv.remove();
+                var aiDiv = document.createElement('div');
+                aiDiv.className = 'chat-message ai';
+                aiDiv.innerHTML = '<strong>Khensani:</strong> ' + (data.reply || 'No response');
+                chatMessages.appendChild(aiDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             })
-            .catch(function(e) {
-                chatOutput.innerHTML += '<p><strong>Error:</strong> ' + e.message + '</p>';
+            .catch(function(error) {
+                typingDiv.remove();
+                var errDiv = document.createElement('div');
+                errDiv.className = 'chat-message ai';
+                errDiv.textContent = 'Khensani: Sorry, I\'m having trouble. Try again.';
+                chatMessages.appendChild(errDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                console.error('Chat error:', error);
             });
+        }
+        
+        // ============================================================
+        // QUIZ
+        // ============================================================
+        var questionBank = {
+            math: [
+                { q: 'Solve: 2x + 5 = 13', options: ['x = 4', 'x = 5', 'x = 6', 'x = 3'], answer: 0 },
+                { q: 'What is the area of a circle with radius 5?', options: ['25π', '10π', '5π', '50π'], answer: 0 }
+            ],
+            science: [
+                { q: 'What is the chemical symbol for water?', options: ['H2O', 'CO2', 'NaCl', 'HCl'], answer: 0 },
+                { q: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], answer: 1 }
+            ],
+            history: [
+                { q: 'When did South Africa become a democracy?', options: ['1990', '1994', '1996', '1999'], answer: 1 }
+            ],
+            coding: [
+                { q: 'What does HTML stand for?', options: ['HyperText Markup Language', 'HighTech Machine Language', 'HyperText Multi Language', 'None'], answer: 0 }
+            ]
         };
         
-        // ===== AUTH LISTENER =====
+        var quizQuestions = [];
+        var quizIndex = 0;
+        var quizScore = 0;
+        var quizCorrect = 0;
+        
+        function generateQuiz() {
+            var subject = document.getElementById('quizSubject').value;
+            var bank = questionBank[subject] || questionBank.math;
+            quizQuestions = bank.map(function(q) { return { q: q.q, options: q.options.slice(), answer: q.answer }; });
+            quizIndex = 0;
+            quizScore = 0;
+            quizCorrect = 0;
+            renderQuizQuestion();
+            updateQuizStats();
+        }
+        
+        function renderQuizQuestion() {
+            if (quizIndex >= quizQuestions.length) {
+                document.getElementById('quizContainer').innerHTML = 
+                    '<div style="text-align:center;padding:20px;">' +
+                    '<h3>🎉 Quiz Complete!</h3>' +
+                    '<p style="font-size:1.5rem;font-weight:bold;color:#00F5D4;">' + quizScore + '/' + quizQuestions.length + '</p>' +
+                    '<button onclick="generateQuiz()" class="chat-send" style="margin-top:15px;">Try Again</button>' +
+                    '</div>';
+                return;
+            }
+            var q = quizQuestions[quizIndex];
+            var html = '<div style="margin-bottom:15px;">' +
+                '<span style="color:var(--text-secondary);">Question ' + (quizIndex+1) + ' of ' + quizQuestions.length + '</span>' +
+                '<p style="font-size:1.1rem;margin-top:8px;font-weight:500;">' + q.q + '</p>' +
+                '</div>';
+            q.options.forEach(function(option, idx) {
+                html += '<button class="quiz-option" onclick="selectQuizOption(this, ' + idx + ')" style="display:block;width:100%;padding:12px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:12px;color:white;cursor:pointer;margin-bottom:8px;text-align:left;">' + String.fromCharCode(65+idx) + '. ' + option + '</button>';
+            });
+            document.getElementById('quizContainer').innerHTML = html;
+        }
+        
+        window.selectQuizOption = function(el, idx) {
+            var q = quizQuestions[quizIndex];
+            var correct = q.answer;
+            var allOptions = document.querySelectorAll('.quiz-option');
+            allOptions.forEach(function(btn) { btn.disabled = true; });
+            if (idx === correct) {
+                el.style.background = '#00FF88';
+                el.style.color = '#000';
+                quizScore++;
+                quizCorrect++;
+            } else {
+                el.style.background = '#EF476F';
+                allOptions[correct].style.background = '#00FF88';
+                allOptions[correct].style.color = '#000';
+            }
+            updateQuizStats();
+            setTimeout(function() { quizIndex++; renderQuizQuestion(); }, 1500);
+        };
+        
+        function updateQuizStats() {
+            document.getElementById('quizScore').textContent = quizScore;
+            document.getElementById('quizCorrect').textContent = quizCorrect;
+        }
+        
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        document.querySelectorAll('.menu-btn').forEach(function(btn) {
+            btn.onclick = function() {
+                document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+                document.getElementById('section-' + this.dataset.section).classList.add('active');
+            };
+        });
+        
+        // ============================================================
+        // AUTH LISTENER
+        // ============================================================
         auth.onAuthStateChanged(function(user) {
             if (user && !isDemo) {
-                userDisplay.textContent = user.email;
-                loginOverlay.style.display = 'none';
-                appContainer.style.display = 'block';
-                errorMsg.textContent = '';
+                console.log('🔥 Firebase auth:', user.email);
+                currentUser = user;
+                isDemo = false;
+                userDisplay.textContent = user.email || 'User';
+                loginOverlay.classList.add('hidden');
+                appContainer.classList.add('active');
+                loginError.textContent = '';
+                idToken = user.getIdToken();
+                loadProfile(user.uid);
+                initApp();
             }
         });
         
-        console.log('✅ Minimal Tshaka M Academy loaded.');
-        console.log('   Click Demo or Google — both should work.');
+        // ============================================================
+        // INIT
+        // ============================================================
+        function initApp() {
+            console.log('🚀 Tshaka M Academy loaded');
+            console.log('   👤 User:', isDemo ? 'Demo' : (currentUser ? currentUser.email : 'None'));
+            console.log('   📡 Backend:', BACKEND_URL);
+        }
+        
+        console.log('✅ Tshaka M Academy ready.');
+        console.log('   Click "Enter Demo" or "Sign in with Google"');
     </script>
 </body>
 </html>
